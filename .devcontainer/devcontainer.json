@@ -1,0 +1,28 @@
+{
+	"name": "npm",
+	"dockerFile": "dockerfile",
+	"context": "..",
+	"appPort": 5173,
+	"runArgs": ["--network=host"],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.vscode-pylance",
+				"samuelcolvin.jinjahtml"
+			]
+		}
+	},
+	"forwardPorts": [5173],
+	"postCreateCommand": "uname -a && node --version && npm --version && docker version",
+	"postStartCommand": {
+        "frontend-setup": "cd frontend/ && npm install",
+        "backend-setup": "cd backend/ && uv sync"
+    },
+	"features": {
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+	},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	"remoteUser": "root"
+}
