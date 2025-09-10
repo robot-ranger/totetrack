@@ -33,6 +33,17 @@ export async function deleteTote(id: string): Promise<void> {
     await http.delete(`/totes/${id}`)
 }
 
+export async function updateTote(id: string, payload: Partial<Tote>): Promise<Tote> {
+    const body = {
+        name: payload.name ?? null,
+        location: payload.location ?? null,
+        metadata_json: payload.metadata_json ?? null,
+        description: payload.description ?? null,
+    }
+    const { data } = await http.put<Tote>(`/totes/${id}`, body)
+    return data
+}
+
 // ——— Items ———
 export type AddItemForm = {
     name: string
@@ -70,7 +81,7 @@ export type UpdateItemForm = {
     imageFile?: File | null
 }
 
-export async function updateItem(itemId: number, form: UpdateItemForm): Promise<Item> {
+export async function updateItem(itemId: string, form: UpdateItemForm): Promise<Item> {
     const fd = new FormData()
     if (form.name !== undefined) fd.set('name', form.name)
     if (form.quantity !== undefined) fd.set('quantity', String(form.quantity))
@@ -80,6 +91,11 @@ export async function updateItem(itemId: number, form: UpdateItemForm): Promise<
     return data
 }
 
-export async function deleteItem(itemId: number): Promise<void> {
+export async function deleteItem(itemId: string): Promise<void> {
     await http.delete(`/items/${itemId}`)
+}
+
+export async function removeItemPhoto(itemId: string): Promise<Item> {
+    const { data } = await http.delete<Item>(`/items/${itemId}/image`)
+    return data
 }

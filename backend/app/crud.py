@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 import app.models as models
 import app.schemas as schemas
+import app.image_store as image_store
 
 # Totes
 
@@ -30,6 +31,21 @@ def delete_tote(db: Session, tote: models.Tote):
     db.delete(tote)
     db.commit()
 
+
+def update_tote(db: Session, tote: models.Tote, upd: schemas.ToteUpdate):
+    if upd.name is not None:
+        tote.name = upd.name
+    if upd.location is not None:
+        tote.location = upd.location
+    if upd.metadata_json is not None:
+        tote.metadata_json = upd.metadata_json
+    if upd.description is not None:
+        tote.description = upd.description
+    db.add(tote)
+    db.commit()
+    db.refresh(tote)
+    return tote
+
 # Items
 
 
@@ -55,7 +71,7 @@ def list_items_in_tote(db: Session, tote_id: str):
     return db.query(models.Item).filter(models.Item.tote_id == tote_id).all()
 
 
-def get_item(db: Session, item_id: int):
+def get_item(db: Session, item_id: str):
     return db.query(models.Item).filter(models.Item.id == item_id).first()
 
 
@@ -68,6 +84,9 @@ def update_item(db: Session, item: models.Item, upd: schemas.ItemUpdate, image_p
     if upd.quantity is not None:
         item.quantity = upd.quantity
     if image_path is not None:
+        # delete old image if present and different
+        if item.image_path and item.image_path != image_path:
+            image_store.delete_image(item.image_path)
         item.image_path = image_path
     db.add(item)
     db.commit()
@@ -76,5 +95,8 @@ def update_item(db: Session, item: models.Item, upd: schemas.ItemUpdate, image_p
 
 
 def delete_item(db: Session, item: models.Item):
+    # delete associated image file if any
+    if item.image_path:
+        image_store.delete_image(item.image_path)
     db.delete(item)
     db.commit()

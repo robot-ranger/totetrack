@@ -18,3 +18,22 @@ def save_image(file: BinaryIO, dest_name: str) -> str:
         path.unlink(missing_ok=True)
         raise
     return str(path)
+
+
+def delete_image(image_path: str | None) -> None:
+    """Delete an image file if it exists. Accepts absolute or stored path.
+
+    The database stores paths like "media/<filename>". To be safe, always
+    resolve to MEDIA_DIR and only delete files within it.
+    """
+    if not image_path:
+        return
+    p = Path(image_path)
+    # Normalize to a file under MEDIA_DIR using just the basename
+    target = MEDIA_DIR / p.name
+    try:
+        if target.is_file():
+            target.unlink(missing_ok=True)
+    except Exception:
+        # Best-effort cleanup: ignore errors to avoid breaking API flows
+        pass

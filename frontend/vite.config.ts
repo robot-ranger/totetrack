@@ -27,12 +27,17 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    https: httpsConfig(),
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api/, ''),
+      },
+      // Proxy media files returned by backend (image_url like /media/xyz.jpg)
+      // Without this, the frontend dev server would 404 these paths.
+      '/media': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
       },
     },
   },

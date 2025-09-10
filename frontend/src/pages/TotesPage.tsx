@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { listTotes } from '../api'
 import type { Tote } from '../types'
 import ToteForm from '../components/ToteForm'
 import ToteTable from '../components/ToteTable'
-import { Box, Heading, Stack, Button, useDisclosure } from '@chakra-ui/react'
+import ItemsPage from './ItemsPage'
+import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, Spacer, SegmentGroup, VStack } from '@chakra-ui/react'
 
 
 export default function TotesPage() {
     const [totes, setTotes] = useState<Tote[]>([])
+    const [viewMode, setViewMode] = useState<'totes' | 'items'>('totes')
     const { open, onOpen, onClose } = useDisclosure()
+    const [q, setQ] = useState('')
 
 
     async function refresh() {
@@ -22,14 +25,18 @@ export default function TotesPage() {
 
     async function handleCreated(_t: Tote) { await refresh() }
 
+    const filtered = useMemo(() => {
+        const query = q.trim().toLowerCase()
+        if (!query) return totes
+        return totes.filter(t => (
+            t.id.toLowerCase().includes(query) ||
+            (t.name?.toLowerCase().includes(query) ?? false)
+        ))
+    }, [totes, q])
+
 
     return (
     <Stack gap={6}>
-            {/* Add Tote Button + Modal */}
-            <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Heading size="md">Totes</Heading>
-                <Button colorPalette="blue" onClick={onOpen}>Add Tote</Button>
-            </Box>
 
             {open && (
                 <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
@@ -42,12 +49,12 @@ export default function TotesPage() {
                     </Box>
                 </Box>
             )}
-
-            {/* All Totes Table */}
-            <Box p={4} borderWidth="1px" borderRadius="md">
-                <Heading size="sm" mb={3}>All totes</Heading>
-                <ToteTable totes={totes} />
-            </Box>
+            {/* Add Tote Button + Modal */}
+            <HStack>
+                <Input placeholder="Search by name or UUID…" value={q} onChange={e => setQ(e.target.value)}/>
+                <Button colorPalette="blue" onClick={onOpen}>Add Tote</Button>
+            </HStack>
+            <ToteTable totes={filtered} />
         </Stack>
     )
 }

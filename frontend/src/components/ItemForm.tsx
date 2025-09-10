@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { addItem, updateItem, deleteItem } from '../api'
+import { useRef, useState } from 'react'
+import { addItem, updateItem, deleteItem, removeItemPhoto } from '../api'
 import type { Item } from '../types'
-import { Button, Grid, GridItem, Input, Textarea, Box, Flex, Heading, Text } from '@chakra-ui/react'
+import { Button, Grid, GridItem, Input, Textarea, Box, Flex, Heading, Text, FileUpload, IconButton } from '@chakra-ui/react'
+import type React from 'react'
+import { FiUpload } from 'react-icons/fi'
 
 
 interface ItemFormProps {
@@ -9,7 +11,7 @@ interface ItemFormProps {
     onCreated?: (i: Item) => void
     existing?: Item | null
     onUpdated?: (i: Item) => void
-    onDeleted?: (id: number) => void
+    onDeleted?: (id: string) => void
 }
 
 export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDeleted }: ItemFormProps) {
@@ -21,6 +23,12 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
     const [submitting, setSubmitting] = useState(false)
     const [deleting, setDeleting] = useState(false)
     const [confirmOpen, setConfirmOpen] = useState(false)
+    const [removingPhoto, setRemovingPhoto] = useState(false)
+    const fileInputRef = useRef<HTMLInputElement | null>(null)
+    type FileChangeDetails = Parameters<NonNullable<React.ComponentProps<typeof FileUpload.Root>["onFileChange"]>>[0]
+    const handleFileChange = (details: FileChangeDetails) => {
+        setFile(details.acceptedFiles[0] ?? null)
+    }
 
     async function submit(e: React.FormEvent) {
         e.preventDefault()
@@ -52,6 +60,17 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
         }
     }
 
+    async function handleRemovePhoto() {
+        if (!existing) return
+        setRemovingPhoto(true)
+        try {
+            const updated = await removeItemPhoto(existing.id)
+            onUpdated?.(updated)
+        } finally {
+            setRemovingPhoto(false)
+        }
+    }
+
     return (
         <form onSubmit={submit}>
             <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4}>
@@ -70,7 +89,18 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                 <GridItem>
                     <Box display="grid" gap={1}>
                         <Box as="label" fontSize="sm" fontWeight="medium">Photo {isEdit && '(upload to replace)'}</Box>
-                        <Input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} />
+                        <FileUpload.Root
+                            accept="image/*"
+                            maxFiles={1}
+                            onFileChange={handleFileChange}
+                        >
+                            <FileUpload.HiddenInput ref={fileInputRef} />
+                            <IconButton variant="outline" size="sm" px={2} onClick={() => fileInputRef.current?.click()}>
+                                <FiUpload />
+                                Select image
+                            </IconButton>
+                            <FileUpload.List />
+                        </FileUpload.Root>
                     </Box>
                 </GridItem>
                 <GridItem colSpan={2}>
@@ -82,7 +112,12 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                 <GridItem colSpan={2}>
                     <Flex gap={3}>
                         <Button type="submit" colorPalette="blue" disabled={submitting}>{isEdit ? 'Save Changes' : 'Add Item'}</Button>
-                        {isEdit && <Button type="button" variant="outline" colorPalette="red" onClick={() => setConfirmOpen(true)}>Delete</Button>}
+                        {isEdit && existing?.image_url && (
+                            <Button type="button" variant="outline" onClick={handleRemovePhoto} disabled={removingPhoto}>
+                                {removingPhoto ? 'Removing…' : 'Remove Photo'}
+                            </Button>
+                        )}
+                        {isEdit && <Button type="button" variant="outline" colorPalette="red" onClick={() => setConfirmOpen(true)}>Delete Item</Button>}
                     </Flex>
                 </GridItem>
             </Grid>

@@ -19,7 +19,7 @@ class Tote(Base):
 
 class Item(Base):
     __tablename__ = "items"
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     tote_id = Column(String, ForeignKey("totes.id"), nullable=False)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)

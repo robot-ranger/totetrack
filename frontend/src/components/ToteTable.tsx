@@ -1,40 +1,46 @@
 import { Tote } from '../types'
 import QRLabel from './QRLabel'
-import { Table, Text } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
+import ToteDetail from './ToteDetail'
+import { Accordion as CAccordion, Badge, Box, HStack, Span, Text, Spacer, Flex } from '@chakra-ui/react'
+
+// Temporary typing shim: Chakra's slot components can trip TS JSX children typing in some setups.
+const Accordion: any = CAccordion as any
 
 export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect?: (id: string) => void }) {
-  const navigate = useNavigate()
-  function handleClick(id: string) {
-    if (onSelect) onSelect(id)
-    navigate(`/totes/${id}`)
-  }
   return (
-      <Table.Root size="sm" variant="line">
-        <Table.Header>
-          <Table.Row>
-            <Table.ColumnHeader>Name</Table.ColumnHeader>
-            <Table.ColumnHeader>UUID</Table.ColumnHeader>
-            <Table.ColumnHeader>Location</Table.ColumnHeader>
-            <Table.ColumnHeader textAlign="end">Items</Table.ColumnHeader>
-            <Table.ColumnHeader>Label</Table.ColumnHeader>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {totes.map(t => (
-            <Table.Row
-              key={t.id}
-              _hover={{ bg: 'bg.subtle', cursor: 'pointer' }}
-              onClick={() => handleClick(t.id)}
-            >
-              <Table.Cell>{t.name ?? '—'}</Table.Cell>
-              <Table.Cell><Text>{'...' + t.id.slice(-6)}</Text></Table.Cell>
-              <Table.Cell>{t.location ?? '—'}</Table.Cell>
-              <Table.Cell textAlign="end">{t.items?.length ?? 0}</Table.Cell>
-              <Table.Cell><QRLabel uuid={t.id} compact /></Table.Cell>
-            </Table.Row>
-          ))}
-        </Table.Body>
-      </Table.Root>
+    <Accordion.Root variant="outline" size="md" collapsible>
+      {totes.map((t) => (
+        <Accordion.Item key={t.id} value={t.id}>
+          <Accordion.ItemTrigger onClick={() => onSelect?.(t.id)}>
+            <HStack flex="1" gap="3" align="center">
+              <Span fontWeight="semibold">{t.name || 'Untitled Tote'}</Span>
+              <Text color="fg.muted">#{t.id.slice(-6)}</Text>
+              {t.location && (
+                <Badge variant="subtle" colorPalette="blue">{t.location}</Badge>
+              )}
+              <Text>{t.metadata_json}</Text>
+              <Spacer />
+              <Badge variant="surface" colorPalette="gray">{t.items?.length ?? 0} items</Badge>
+              <Flex maxW="20ch">
+              <Text color="fg.muted" fontSize="sm" lineClamp={1}>
+                {t.items?.length > 0 ? 
+                  t.items.map(i => i.name).join(', ') : 'No items'}</Text></Flex>
+              
+              {/* <Box display={{ base: 'none', md: 'block' }}>
+                <QRLabel uuid={t.id} compact />
+              </Box> */}
+            </HStack>
+            <Accordion.ItemIndicator />
+          </Accordion.ItemTrigger>
+          <Accordion.ItemContent>
+            <Accordion.ItemBody>
+                <Box py={2}>
+                  <ToteDetail toteId={t.id} inList />
+                </Box>
+            </Accordion.ItemBody>
+          </Accordion.ItemContent>
+        </Accordion.Item>
+      ))}
+    </Accordion.Root>
   )
 }

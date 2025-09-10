@@ -19,7 +19,7 @@ class ItemUpdate(BaseModel):
 
 
 class ItemOut(ItemBase):
-    id: int
+    id: str
     image_url: Optional[str] = None
     tote_id: Optional[str] = None
 
@@ -35,6 +35,9 @@ class ToteBase(BaseModel):
 
 
 class ToteCreate(ToteBase):
+    pass
+
+class ToteUpdate(ToteBase):
     pass
 
 

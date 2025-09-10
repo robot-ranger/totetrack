@@ -50,8 +50,21 @@ def delete_tote(tote_id: str, db: Session = Depends(get_session)):
     tote = crud.get_tote(db, tote_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
+    # Cleanup item images before deleting via cascade
+    for it in tote.items:
+        if it.image_path:
+            image_store.delete_image(it.image_path)
     crud.delete_tote(db, tote)
     return {"ok": True}
+
+
+@app.put("/totes/{tote_id}", response_model=schemas.ToteOut)
+def update_tote(tote_id: str, tote_in: schemas.ToteUpdate, db: Session = Depends(get_session)):
+    tote = crud.get_tote(db, tote_id)
+    if not tote:
+        raise HTTPException(status_code=404, detail="Tote not found")
+    updated = crud.update_tote(db, tote, tote_in)
+    return updated
 
 # Items
 
@@ -124,7 +137,7 @@ async def items_in_tote(tote_id: str, db: Session = Depends(get_session)):
 
 @app.put("/items/{item_id}", response_model=schemas.ItemOut)
 async def update_item(
-    item_id: int,
+    item_id: str,
     name: str | None = Form(None),
     quantity: int | None = Form(None),
     description: str | None = Form(None),
@@ -159,9 +172,33 @@ async def update_item(
 
 
 @app.delete("/items/{item_id}")
-async def delete_item(item_id: int, db: Session = Depends(get_session)):
+async def delete_item(item_id: str, db: Session = Depends(get_session)):
     item = crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     crud.delete_item(db, item)
     return {"ok": True}
+
+
+@app.delete("/items/{item_id}/image", response_model=schemas.ItemOut)
+async def delete_item_image(item_id: str, db: Session = Depends(get_session)):
+    """Remove an item's associated image file and clear its image_path.
+    Leaves the item record intact.
+    """
+    item = crud.get_item(db, item_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    if item.image_path:
+        image_store.delete_image(item.image_path)
+        item.image_path = None
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+    return schemas.ItemOut.model_validate({
+        "id": item.id,
+        "name": item.name,
+        "description": item.description,
+        "quantity": item.quantity,
+        "image_url": None,
+        "tote_id": item.tote_id,
+    })

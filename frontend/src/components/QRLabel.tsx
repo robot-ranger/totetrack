@@ -3,11 +3,12 @@ import { useState, useRef, MouseEvent } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Box, Code, VStack, Button, Flex, Text } from '@chakra-ui/react'
 
-export default function QRLabel({ uuid, compact = false }: { uuid: string; compact?: boolean }) {
+export default function QRLabel({ uuid, name, compact = false }: { uuid: string; name?: string; compact?: boolean }) {
     const [open, setOpen] = useState(false)
-        const qrWrapperRef = useRef<HTMLDivElement | null>(null)
-    const last6 = uuid.replace(/-/g, '').slice(-6).toUpperCase()
+    const qrWrapperRef = useRef<HTMLDivElement | null>(null)
+    const last6 = uuid.replace(/-/g, '').slice(-6)
     const size = compact ? 64 : 180
+    const url = `https://totetrack:5173/totes/${uuid}`
 
     function handleClick(e: MouseEvent) {
         // Prevent parent row navigation
@@ -21,14 +22,14 @@ export default function QRLabel({ uuid, compact = false }: { uuid: string; compa
         setOpen(false)
     }
 
-        function handlePrint(e: MouseEvent) {
-            e.stopPropagation()
-            const canvas = qrWrapperRef.current?.querySelector('canvas') as HTMLCanvasElement | null
-            if (!canvas) return
+    function handlePrint(e: MouseEvent) {
+        e.stopPropagation()
+        const canvas = qrWrapperRef.current?.querySelector('canvas') as HTMLCanvasElement | null
+        if (!canvas) return
         const dataUrl = canvas.toDataURL('image/png')
         const win = window.open('', '_blank')
         if (win) {
-            win.document.write(`<!DOCTYPE html><html><head><title>QR Label ${last6}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,Arial,sans-serif;} img{width:400px;height:400px;} code{margin-top:12px;font-size:24px;} @media print { body { height:auto; } }</style></head><body><img src="${dataUrl}" alt="QR ${last6}"/><code>${last6}</code><script>window.onload=()=>setTimeout(()=>window.print(),100)</script></body></html>`)
+            win.document.write(`<!DOCTYPE html><html><head><title>QR Label ${last6}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:system-ui,Arial,sans-serif;} img{width:320px;height:320px;} code{margin-top:12px;font-size:24px;} @media print { body { height:auto; } }</style></head><body><img src="${dataUrl}" alt="QR ${last6}"/><h1>${name}</h1><code>${last6}</code><script>window.onload=()=>setTimeout(()=>window.print(),100)</script></body></html>`)
             win.document.close()
         }
     }
@@ -46,10 +47,11 @@ export default function QRLabel({ uuid, compact = false }: { uuid: string; compa
                 role="button"
                 tabIndex={0}
                 onClick={handleClick}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleClick(e as any) } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { handleClick(e as any) } }}
                 _hover={{ bg: 'bg.subtle', cursor: 'pointer' }}
             >
-                <QRCodeCanvas value={uuid} size={size} includeMargin={false} />
+                <QRCodeCanvas value={url} size={size} includeMargin={false} />
+                {name && <Text fontSize={compact ? 'xs' : 'sm'}>{name}</Text>}
                 <Code fontSize={compact ? 'xs' : 'md'}>{last6}</Code>
             </Box>
 
@@ -81,10 +83,11 @@ export default function QRLabel({ uuid, compact = false }: { uuid: string; compa
                             </Flex>
                         </Flex>
                         <VStack>
-                              {/* Type cast to allow grabbing underlying canvas element */}
-                                            <Box ref={qrWrapperRef}>
-                                                <QRCodeCanvas value={uuid} size={320} includeMargin={false} />
-                                            </Box>
+                            {/* Type cast to allow grabbing underlying canvas element */}
+                            <Box ref={qrWrapperRef}>
+                                <QRCodeCanvas value={url} size={320} includeMargin={false} />
+                            </Box>
+                            {name && <Text fontSize="3xl">{name}</Text>}
                             <Code fontSize="lg">{last6}</Code>
                         </VStack>
                     </Box>

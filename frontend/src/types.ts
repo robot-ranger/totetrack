@@ -1,7 +1,7 @@
 // frontend/src/types.ts
 
 export interface Item {
-    id: number
+    id: string
     name: string
     description?: string | null
     quantity: number

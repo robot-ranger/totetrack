@@ -2,6 +2,7 @@
 
 Inventory & tote tracking with fast item capture, QR labels, and mobile-friendly scanning.
 
+
 ## Overview
 Boxly lets you create "totes" (containers) and add items (optionally with photos) so you can search, scan, and know where everything lives. Each tote gets a UUID you can render as a QR code for printing and attaching to the tote; scanning jumps straight to the tote detail view. Great for garage / maker space / prop room / move preparation organization.
 
@@ -17,6 +18,18 @@ Boxly lets you create "totes" (containers) and add items (optionally with photos
 - Frontend: React 18 + Vite + TypeScript + Chakra UI
 - Backend: FastAPI, SQLAlchemy 2.x, Pydantic v2, SQLite (file DB shipped as `totes.db`)
 - Dev Environment: VS Code Dev Container (Python + Node + uv package manager)
+
+## Screenshots
+Below are a few screenshots from the current UI. Images are stored under `images/` in this repo.
+
+<p>
+	<img alt="Screenshot 1" src="images/Firefox_Screenshot_2025-09-10T00-51-04.562Z.png" width="360" />
+	<img alt="Screenshot 2" src="images/Firefox_Screenshot_2025-09-10T00-51-26.463Z.png" width="360" />
+</p>
+<p>
+	<img alt="Screenshot 3" src="images/Firefox_Screenshot_2025-09-10T00-52-00.946Z.png" width="360" />
+	<img alt="Screenshot 4" src="images/Firefox_Screenshot_2025-09-10T00-52-11.144Z.png" width="360" />
+</p>
 
 ---
 ## Quick Start (Dev)
