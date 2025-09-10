@@ -18,11 +18,11 @@ export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect
               {t.location && (
                 <Badge variant="subtle" colorPalette="blue">{t.location}</Badge>
               )}
-              <Text>{t.metadata_json}</Text>
+              <Text lineClamp={1}>{t.metadata_json}</Text>
               <Spacer />
               <Badge variant="surface" colorPalette="gray">{t.items?.length ?? 0} items</Badge>
               <Flex maxW="20ch">
-              <Text color="fg.muted" fontSize="sm" lineClamp={1}>
+              <Text color="fg.muted" fontSize="sm" lineClamp={1} display={{ base: 'none', md: 'flex' }}>
                 {t.items?.length > 0 ? 
                   t.items.map(i => i.name).join(', ') : 'No items'}</Text></Flex>
               

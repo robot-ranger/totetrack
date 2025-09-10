@@ -6,10 +6,51 @@ import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import { FiArchive, FiCamera, FiDownloadCloud, FiMoon, FiSun, FiTag } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
+import { listItems } from './api'
+import type { Item } from './types'
 
 
 export default function App() {
     const { colorMode, toggleColorMode } = useColorMode()
+
+    function toCsv(items: Item[]): string {
+        const headers = ['id', 'name', 'description', 'quantity', 'tote_id', 'image_url'] as const
+        const escape = (val: unknown) => {
+            if (val === null || val === undefined) return ''
+            const s = String(val)
+            if (/[",\n\r]/.test(s)) {
+                return '"' + s.replace(/"/g, '""') + '"'
+            }
+            return s
+        }
+        const lines = [headers.join(',')]
+        for (const it of items) {
+            const row = headers.map(h => escape((it as any)[h]))
+            lines.push(row.join(','))
+        }
+        return lines.join('\r\n')
+    }
+
+    async function handleDownloadCsv() {
+        try {
+            const items = await listItems()
+            const csv = toCsv(items)
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+            const url = URL.createObjectURL(blob)
+            const ts = new Date()
+            const pad = (n: number) => String(n).padStart(2, '0')
+            const filename = `items-${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.csv`
+            const a = document.createElement('a')
+            a.href = url
+            a.download = filename
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error('Failed to download CSV', err)
+        }
+    }
     return (
         <Container maxW="6xl" py={6}>
             <HStack gap={6} mb={6}>
@@ -17,8 +58,8 @@ export default function App() {
                 <Spacer />
                 <RouterLink to="/"><HStack><Icon size={'sm'}><FiArchive/></Icon>Totes</HStack></RouterLink>
                 <RouterLink to="/items"><HStack><Icon size={'sm'}><FiTag/></Icon>Items</HStack></RouterLink>
-                <IconButton variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
-                <IconButton variant="subtle" size="sm"><FiDownloadCloud /></IconButton>
+                <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
             </HStack>
             <Routes>
                 <Route path="/" element={<TotesPage />} />
