@@ -1,10 +1,10 @@
-# Boxly
+# ToteTrack
 
 Inventory & tote tracking with fast item capture, QR labels, and mobile-friendly scanning.
 
 
 ## Overview
-Boxly lets you create "totes" (containers) and add items (optionally with photos) so you can search, scan, and know where everything lives. Each tote gets a UUID you can render as a QR code for printing and attaching to the tote; scanning jumps straight to the tote detail view. Great for garage / maker space / prop room / move preparation organization.
+ToteTrack lets you create "totes" (containers) and add items to each tote so you can search, scan, and know where everything lives. Each tote gets a QR code for printing and attaching to the tote; scanning jumps straight to the tote detail view. Great for garage / maker space / prop room / move preparation organization.
 
 ### Core Features
 - Create / delete totes with name, location, description, arbitrary metadata JSON
