@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton } from '@chakra-ui/react'
 import { useColorMode } from './components/ui/color-mode'
 import TotesPage from './pages/TotesPage'
@@ -8,10 +8,14 @@ import { FiArchive, FiCamera, FiDownloadCloud, FiMoon, FiSun, FiTag } from 'reac
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
 import type { Item } from './types'
+import { useAuth } from './auth'
+import LoginPage from './pages/LoginPage'
+import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
 
 
 export default function App() {
     const { colorMode, toggleColorMode } = useColorMode()
+    const { user, logout } = useAuth()
 
     function toCsv(items: Item[]): string {
         const headers = ['id', 'name', 'description', 'quantity', 'tote_id', 'image_url'] as const
@@ -51,6 +55,25 @@ export default function App() {
             console.error('Failed to download CSV', err)
         }
     }
+    // Public routes
+    if (!user) {
+        return (
+            <Container maxW="6xl" py={6}>
+                <HStack gap={6} mb={6}>
+                    <NavLink to='/'><HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="ToteTrack" w={30}/><Heading size="lg">ToteTrack</Heading></HStack></NavLink>
+                    <Spacer />
+                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                </HStack>
+                <Routes>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/recover" element={<PasswordRecoveryPage />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Container>
+        )
+    }
+
+    // Authenticated routes
     return (
         <Container maxW="6xl" py={6}>
             <HStack gap={6} mb={6}>
@@ -65,6 +88,7 @@ export default function App() {
                 <Route path="/" element={<TotesPage />} />
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/totes/:toteId" element={<ToteDetailPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Container>
     )

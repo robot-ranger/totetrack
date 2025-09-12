@@ -1,10 +1,47 @@
 // frontend/src/api.ts
 import axios from 'axios'
-import type { Tote, Item } from './types'
+import type { Tote, Item, User } from './types'
 
 // Allow overriding via Vite env; falls back to Vite dev proxy ("/api")
 const baseURL = import.meta.env.VITE_API_BASE ?? '/api'
 export const http = axios.create({ baseURL })
+
+// Attach token helper
+export function setAuthToken(token: string | null) {
+    if (token) {
+        http.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    } else {
+        delete http.defaults.headers.common['Authorization']
+    }
+}
+
+// ——— Auth ———
+export type TokenResponse = { access_token: string; token_type: string }
+
+export async function login(email: string, password: string): Promise<TokenResponse> {
+    const body = new URLSearchParams()
+    body.set('username', email)
+    body.set('password', password)
+    const { data } = await http.post<TokenResponse>('/auth/token', body, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+    return data
+}
+
+export async function getMe(): Promise<User> {
+    const { data } = await http.get<User>('/users/me')
+    return data
+}
+
+export async function requestPasswordRecovery(email: string): Promise<{ message?: string; recovery_token?: string }> {
+    const { data } = await http.post('/password-recovery', { email })
+    return data
+}
+
+export async function confirmPasswordRecovery(token: string, newPassword: string): Promise<{ message: string }> {
+    const { data } = await http.post('/password-recovery/confirm', { token, new_password: newPassword })
+    return data
+}
 
 // ——— Totes ———
 export async function listTotes(): Promise<Tote[]> {

@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, Depends, UploadFile, File, HTTPException, Form, status
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List
+import os
+from app import security
 
 from app.db import Base, engine, get_session
 import app.models as models
@@ -12,7 +15,14 @@ import app.image_store as image_store
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Tote Inventory API")
+# Instantiate app early so decorators below work
+openapi_tags = [
+    {"name": "users", "description": "Authentication, user management, and password recovery."},
+    {"name": "totes", "description": "CRUD operations for totes."},
+    {"name": "items", "description": "CRUD operations for items, including image upload and deletion."},
+]
+
+app = FastAPI(title="Tote Inventory API", openapi_tags=openapi_tags)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,29 +34,91 @@ app.add_middleware(
 # Serve media files
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
+
+@app.on_event("startup")
+def init_superuser():
+    from app.db import SessionLocal  # local import to avoid cycles
+    email = os.getenv("INITIAL_SUPERUSER_EMAIL")
+    password = os.getenv("INITIAL_SUPERUSER_PASSWORD")
+    if not email or not password:
+        return
+    with SessionLocal() as db:
+        existing = crud.get_user_by_email(db, email.lower())
+        if not existing:
+            crud.create_user(db, schemas.UserCreate(email=email, password=password, full_name="Admin", is_superuser=True))
+            print("[startup] Created initial superuser", email)
+
+
+# Auth & Users
+
+
+@app.post("/auth/token", response_model=schemas.Token, tags=["users"])
+def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_session)):
+    user = crud.authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect email or password")
+    token = security.create_access_token(user.id)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@app.get("/users/me", response_model=schemas.UserOut, tags=["users"])
+def read_users_me(current_user=Depends(security.get_current_active_user)):
+    return current_user
+
+
+@app.post("/users", response_model=schemas.UserOut, tags=["users"])
+def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+    existing = crud.get_user_by_email(db, user_in.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    user = crud.create_user(db, user_in)
+    return user
+
+
+@app.get("/users", response_model=List[schemas.UserOut], tags=["users"])
+def list_users(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+    return crud.list_users(db)
+
+
+@app.post("/password-recovery", tags=["users"])
+def password_recovery_init(payload: schemas.PasswordRecoveryInit, db: Session = Depends(get_session)):
+    user = crud.get_user_by_email(db, payload.email)
+    if not user:
+        return {"message": "If the account exists, a recovery token has been generated."}
+    token_plain = crud.set_reset_token(db, user)
+    return {"recovery_token": token_plain}
+
+
+@app.post("/password-recovery/confirm", tags=["users"])
+def password_recovery_confirm(payload: schemas.PasswordRecoveryConfirm, db: Session = Depends(get_session)):
+    user = crud.consume_reset_token(db, payload.token, payload.new_password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    return {"message": "Password updated"}
+
 # Totes
 
 
-@app.post("/totes", response_model=schemas.ToteOut)
-def create_tote(tote: schemas.ToteCreate, db: Session = Depends(get_session)):
+@app.post("/totes", response_model=schemas.ToteOut, tags=["totes"])
+def create_tote(tote: schemas.ToteCreate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     return crud.create_tote(db, tote)
 
 
-@app.get("/totes", response_model=List[schemas.ToteOut])
-def get_totes(db: Session = Depends(get_session)):
+@app.get("/totes", response_model=List[schemas.ToteOut], tags=["totes"])
+def get_totes(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     return crud.list_totes(db)
 
 
-@app.get("/totes/{tote_id}", response_model=schemas.ToteOut)
-def get_tote(tote_id: str, db: Session = Depends(get_session)):
+@app.get("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
+def get_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     m = crud.get_tote(db, tote_id)
     if not m:
         raise HTTPException(status_code=404, detail="Tote not found")
     return m
 
 
-@app.delete("/totes/{tote_id}")
-def delete_tote(tote_id: str, db: Session = Depends(get_session)):
+@app.delete("/totes/{tote_id}", tags=["totes"])
+def delete_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     tote = crud.get_tote(db, tote_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
@@ -58,8 +130,8 @@ def delete_tote(tote_id: str, db: Session = Depends(get_session)):
     return {"ok": True}
 
 
-@app.put("/totes/{tote_id}", response_model=schemas.ToteOut)
-def update_tote(tote_id: str, tote_in: schemas.ToteUpdate, db: Session = Depends(get_session)):
+@app.put("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
+def update_tote(tote_id: str, tote_in: schemas.ToteUpdate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     tote = crud.get_tote(db, tote_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
@@ -69,7 +141,7 @@ def update_tote(tote_id: str, tote_in: schemas.ToteUpdate, db: Session = Depends
 # Items
 
 
-@app.post("/totes/{tote_id}/items", response_model=schemas.ItemOut)
+@app.post("/totes/{tote_id}/items", response_model=schemas.ItemOut, tags=["items"])
 async def create_item(
     tote_id: str,
     # Explicitly declare form fields so FastAPI reads them from multipart/form-data
@@ -77,7 +149,8 @@ async def create_item(
     quantity: int = Form(1),
     description: str | None = Form(None),
     image: UploadFile | None = File(None),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    _: models.User = Depends(security.get_current_active_user)
 ):
     # Validate tote exists
     tote = crud.get_tote(db, tote_id)
@@ -103,8 +176,8 @@ async def create_item(
     })
 
 
-@app.get("/items", response_model=List[schemas.ItemOut])
-async def all_items(db: Session = Depends(get_session)):
+@app.get("/items", response_model=List[schemas.ItemOut], tags=["items"])
+async def all_items(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     rows = crud.list_items(db)
     out = []
     for r in rows:
@@ -119,8 +192,8 @@ async def all_items(db: Session = Depends(get_session)):
     return out
 
 
-@app.get("/totes/{tote_id}/items", response_model=List[schemas.ItemOut])
-async def items_in_tote(tote_id: str, db: Session = Depends(get_session)):
+@app.get("/totes/{tote_id}/items", response_model=List[schemas.ItemOut], tags=["items"])
+async def items_in_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     rows = crud.list_items_in_tote(db, tote_id)
     out = []
     for r in rows:
@@ -135,14 +208,15 @@ async def items_in_tote(tote_id: str, db: Session = Depends(get_session)):
     return out
 
 
-@app.put("/items/{item_id}", response_model=schemas.ItemOut)
+@app.put("/items/{item_id}", response_model=schemas.ItemOut, tags=["items"])
 async def update_item(
     item_id: str,
     name: str | None = Form(None),
     quantity: int | None = Form(None),
     description: str | None = Form(None),
     image: UploadFile | None = File(None),
-    db: Session = Depends(get_session)
+    db: Session = Depends(get_session),
+    _: models.User = Depends(security.get_current_active_user)
 ):
     item = crud.get_item(db, item_id)
     if not item:
@@ -171,8 +245,8 @@ async def update_item(
     })
 
 
-@app.delete("/items/{item_id}")
-async def delete_item(item_id: str, db: Session = Depends(get_session)):
+@app.delete("/items/{item_id}", tags=["items"])
+async def delete_item(item_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     item = crud.get_item(db, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -180,8 +254,8 @@ async def delete_item(item_id: str, db: Session = Depends(get_session)):
     return {"ok": True}
 
 
-@app.delete("/items/{item_id}/image", response_model=schemas.ItemOut)
-async def delete_item_image(item_id: str, db: Session = Depends(get_session)):
+@app.delete("/items/{item_id}/image", response_model=schemas.ItemOut, tags=["items"])
+async def delete_item_image(item_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
     """Remove an item's associated image file and clear its image_path.
     Leaves the item record intact.
     """

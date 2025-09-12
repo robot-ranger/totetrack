@@ -1,5 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Integer, ForeignKey, Text
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, Boolean, DateTime, UniqueConstraint
+from datetime import datetime
 from sqlalchemy.orm import relationship
 from app.db import Base
 
@@ -27,3 +28,21 @@ class Item(Base):
     image_path = Column(String, nullable=True)  # stored relative to /media
 
     tote = relationship("Tote", back_populates="items")
+
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String, nullable=False, unique=True, index=True)
+    full_name = Column(String, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    is_superuser = Column(Boolean, nullable=False, default=False)
+    hashed_password = Column(String, nullable=False)
+    reset_token_hash = Column(String, nullable=True, index=True)
+    reset_token_expires = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('email', name='uq_users_email'),
+    )

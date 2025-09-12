@@ -39,6 +39,19 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      // Proxy FastAPI docs as well so visiting /docs in dev works
+      '/docs': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/redoc': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/openapi.json': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
   optimizeDeps: {
