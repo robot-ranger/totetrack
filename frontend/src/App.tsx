@@ -4,7 +4,8 @@ import { useColorMode } from './components/ui/color-mode'
 import TotesPage from './pages/TotesPage'
 import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
-import { FiArchive, FiCamera, FiDownloadCloud, FiMoon, FiSun, FiTag } from 'react-icons/fi'
+import UsersPage from './pages/UsersPage'
+import { FiArchive, FiCamera, FiDownloadCloud, FiMoon, FiSun, FiTag, FiUsers } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
 import type { Item } from './types'
@@ -81,12 +82,16 @@ export default function App() {
                 <Spacer />
                 <RouterLink to="/"><HStack><Icon size={'sm'}><FiArchive/></Icon>Totes</HStack></RouterLink>
                 <RouterLink to="/items"><HStack><Icon size={'sm'}><FiTag/></Icon>Items</HStack></RouterLink>
+                {user.is_superuser && (
+                    <RouterLink to="/users"><HStack><Icon size={'sm'}><FiUsers/></Icon>Users</HStack></RouterLink>
+                )}
                 <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                 <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
             </HStack>
             <Routes>
                 <Route path="/" element={<TotesPage />} />
                 <Route path="/items" element={<ItemsPage />} />
+                <Route path="/users" element={<UsersPage />} />
                 <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

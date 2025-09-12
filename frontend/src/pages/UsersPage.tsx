@@ -1,0 +1,283 @@
+import { useState, useEffect } from 'react'
+import {
+    Box,
+    Button,
+    Heading,
+    Table,
+    Text,
+    Badge,
+    HStack,
+    VStack,
+    IconButton,
+    Menu,
+    Portal,
+    Flex,
+} from '@chakra-ui/react'
+import { FiMoreVertical, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi'
+import { useAuth } from '../auth'
+import { listUsers, createUser, updateUser, deleteUser } from '../api'
+import type { User } from '../types'
+import type { CreateUserForm, UpdateUserForm } from '../api'
+import UserForm from '../components/UserForm'
+
+function useSimpleDisclosure(initial = false) {
+    const [open, setOpen] = useState(initial)
+    return { open, onOpen: () => setOpen(true), onClose: () => setOpen(false) }
+}
+
+export default function UsersPage() {
+    const { user: currentUser } = useAuth()
+    const [users, setUsers] = useState<User[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
+    const [editingUser, setEditingUser] = useState<User | null>(null)
+    const [deletingUser, setDeletingUser] = useState<User | null>(null)
+    const [formLoading, setFormLoading] = useState(false)
+    const createModal = useSimpleDisclosure()
+    const editModal = useSimpleDisclosure()
+    const deleteModal = useSimpleDisclosure()
+
+    // Only show page to superusers
+    if (!currentUser?.is_superuser) {
+        return (
+            <Box textAlign="center" py={10}>
+                <Text fontSize="lg" color="gray.500">
+                    Access denied. This page is only available to superusers.
+                </Text>
+            </Box>
+        )
+    }
+
+    useEffect(() => {
+        loadUsers()
+    }, [])
+
+    async function loadUsers() {
+        try {
+            setError('')
+            setLoading(true)
+            const data = await listUsers()
+            setUsers(data)
+        } catch (err: any) {
+            setError(err.response?.data?.detail || 'Failed to load users')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    async function handleCreateUser(formData: CreateUserForm | UpdateUserForm) {
+        setFormLoading(true)
+        try {
+            const newUser = await createUser(formData as CreateUserForm)
+            setUsers(prev => [...prev, newUser])
+            createModal.onClose()
+        } catch (err: any) {
+            throw err // Let the form handle the error
+        } finally {
+            setFormLoading(false)
+        }
+    }
+
+    async function handleUpdateUser(formData: CreateUserForm | UpdateUserForm) {
+        if (!editingUser) return
+        
+        setFormLoading(true)
+        try {
+            const updatedUser = await updateUser(editingUser.id, formData as UpdateUserForm)
+            setUsers(prev => prev.map(u => u.id === editingUser.id ? updatedUser : u))
+            editModal.onClose()
+            setEditingUser(null)
+        } catch (err: any) {
+            throw err // Let the form handle the error
+        } finally {
+            setFormLoading(false)
+        }
+    }
+
+    async function handleDeleteUser() {
+        if (!deletingUser) return
+
+        try {
+            await deleteUser(deletingUser.id)
+            setUsers(prev => prev.filter(u => u.id !== deletingUser.id))
+            deleteModal.onClose()
+            setDeletingUser(null)
+        } catch (err: any) {
+            setError(err.response?.data?.detail || 'Failed to delete user')
+        }
+    }
+
+    function MoreMenu({ user }: { user: User }) {
+        const M = Menu as any
+        const canDelete = user.id !== currentUser?.id // Can't delete yourself
+
+        return (
+            <M.Root>
+                <M.Trigger asChild>
+                    <IconButton
+                        aria-label="More actions"
+                        size="sm"
+                        variant="ghost"
+                    >
+                        <FiMoreVertical />
+                    </IconButton>
+                </M.Trigger>
+                <Portal>
+                    <M.Positioner>
+                        <M.Content>
+                            <M.Item
+                                value="edit"
+                                onClick={() => {
+                                    setEditingUser(user)
+                                    editModal.onOpen()
+                                }}
+                            >
+                                <FiEdit2 style={{ marginRight: '8px' }} />
+                                Edit User
+                            </M.Item>
+                            {canDelete && (
+                                <M.Item
+                                    value="delete"
+                                    onClick={() => {
+                                        setDeletingUser(user)
+                                        deleteModal.onOpen()
+                                    }}
+                                >
+                                    <FiTrash2 style={{ marginRight: '8px' }} />
+                                    Delete User
+                                </M.Item>
+                            )}
+                        </M.Content>
+                    </M.Positioner>
+                </Portal>
+            </M.Root>
+        )
+    }
+
+    if (loading) {
+        return <Text>Loading users...</Text>
+    }
+
+    return (
+        <VStack align="stretch" gap={6}>
+            <HStack justify="space-between">
+                <Heading size="lg">Users</Heading>
+                <Button onClick={createModal.onOpen}>
+                    <FiPlus style={{ marginRight: '8px' }} />
+                    Add User
+                </Button>
+            </HStack>
+
+            {error && (
+                <Box bg="red.50" border="1px solid" borderColor="red.200" p={3} borderRadius="md">
+                    <Text color="red.600" fontSize="sm">{error}</Text>
+                </Box>
+            )}
+
+            <Box overflowX="auto">
+                <Table.Root size="sm" variant="line">
+                    <Table.Header>
+                        <Table.Row>
+                            <Table.ColumnHeader>Email</Table.ColumnHeader>
+                            <Table.ColumnHeader>Full Name</Table.ColumnHeader>
+                            <Table.ColumnHeader>Status</Table.ColumnHeader>
+                            <Table.ColumnHeader>Role</Table.ColumnHeader>
+                            <Table.ColumnHeader>Created</Table.ColumnHeader>
+                            <Table.ColumnHeader textAlign="center">Actions</Table.ColumnHeader>
+                        </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                        {users.map(user => (
+                            <Table.Row key={user.id}>
+                                <Table.Cell>
+                                    <Text fontWeight="medium">{user.email}</Text>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <Text>{user.full_name || '-'}</Text>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <Badge colorScheme={user.is_active ? 'green' : 'red'}>
+                                        {user.is_active ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <Badge colorScheme={user.is_superuser ? 'purple' : 'gray'}>
+                                        {user.is_superuser ? 'Superuser' : 'User'}
+                                    </Badge>
+                                </Table.Cell>
+                                <Table.Cell>
+                                    <Text fontSize="sm" color="gray.600">
+                                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                                    </Text>
+                                </Table.Cell>
+                                <Table.Cell textAlign="center">
+                                    <MoreMenu user={user} />
+                                </Table.Cell>
+                            </Table.Row>
+                        ))}
+                    </Table.Body>
+                </Table.Root>
+            </Box>
+
+            {/* Create User Modal */}
+            {createModal.open && (
+                <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
+                    <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
+                        <Flex justify="space-between" align="center" mb={4}>
+                            <Heading size="md">Create New User</Heading>
+                            <Button size="sm" variant="ghost" onClick={createModal.onClose}>Close</Button>
+                        </Flex>
+                        <UserForm
+                            onSubmit={handleCreateUser}
+                            onCancel={createModal.onClose}
+                            loading={formLoading}
+                        />
+                    </Box>
+                </Box>
+            )}
+
+            {/* Edit User Modal */}
+            {editModal.open && editingUser && (
+                <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
+                    <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
+                        <Flex justify="space-between" align="center" mb={4}>
+                            <Heading size="md">Edit User</Heading>
+                            <Button size="sm" variant="ghost" onClick={() => { editModal.onClose(); setEditingUser(null) }}>Close</Button>
+                        </Flex>
+                        <UserForm
+                            user={editingUser}
+                            onSubmit={handleUpdateUser}
+                            onCancel={() => { editModal.onClose(); setEditingUser(null) }}
+                            loading={formLoading}
+                        />
+                    </Box>
+                </Box>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {deleteModal.open && deletingUser && (
+                <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
+                    <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
+                        <Flex justify="space-between" align="center" mb={4}>
+                            <Heading size="md">Delete User</Heading>
+                            <Button size="sm" variant="ghost" onClick={() => { deleteModal.onClose(); setDeletingUser(null) }}>Close</Button>
+                        </Flex>
+                        <VStack gap={4}>
+                            <Text>
+                                Are you sure you want to delete user "{deletingUser.email}"? This action cannot be undone.
+                            </Text>
+                            <HStack gap={2} justify="end" w="full">
+                                <Button variant="outline" onClick={() => { deleteModal.onClose(); setDeletingUser(null) }}>
+                                    Cancel
+                                </Button>
+                                <Button colorScheme="red" onClick={handleDeleteUser}>
+                                    Delete User
+                                </Button>
+                            </HStack>
+                        </VStack>
+                    </Box>
+                </Box>
+            )}
+        </VStack>
+    )
+}

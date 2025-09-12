@@ -135,6 +135,27 @@ def create_user(db: Session, user_in: schemas.UserCreate):
     return user
 
 
+def update_user(db: Session, user: models.User, user_in: schemas.UserUpdate):
+    if user_in.full_name is not None:
+        user.full_name = user_in.full_name
+    if user_in.password is not None:
+        user.hashed_password = get_password_hash(user_in.password)
+    if user_in.is_active is not None:
+        user.is_active = user_in.is_active
+    if user_in.is_superuser is not None:
+        user.is_superuser = user_in.is_superuser
+    user.updated_at = datetime.utcnow()
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+def delete_user(db: Session, user: models.User):
+    db.delete(user)
+    db.commit()
+
+
 def update_user_password(db: Session, user: models.User, new_password: str):
     user.hashed_password = get_password_hash(new_password)
     db.add(user)

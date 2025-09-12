@@ -80,6 +80,33 @@ def list_users(db: Session = Depends(get_session), _: models.User = Depends(secu
     return crud.list_users(db)
 
 
+@app.get("/users/{user_id}", response_model=schemas.UserOut, tags=["users"])
+def get_user(user_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@app.put("/users/{user_id}", response_model=schemas.UserOut, tags=["users"])
+def update_user(user_id: str, user_in: schemas.UserUpdate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.update_user(db, user, user_in)
+
+
+@app.delete("/users/{user_id}", tags=["users"])
+def delete_user(user_id: str, db: Session = Depends(get_session), current_user: models.User = Depends(security.get_current_active_superuser)):
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    crud.delete_user(db, user)
+    return {"ok": True}
+
+
 @app.post("/password-recovery", tags=["users"])
 def password_recovery_init(payload: schemas.PasswordRecoveryInit, db: Session = Depends(get_session)):
     user = crud.get_user_by_email(db, payload.email)

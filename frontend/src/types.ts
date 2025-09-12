@@ -24,4 +24,6 @@ export interface User {
     full_name?: string | null
     is_active: boolean
     is_superuser: boolean
+    created_at?: string | null
+    updated_at?: string | null
 }

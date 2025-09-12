@@ -136,3 +136,53 @@ export async function removeItemPhoto(itemId: string): Promise<Item> {
     const { data } = await http.delete<Item>(`/items/${itemId}/image`)
     return data
 }
+
+// ——— Users (superuser only) ———
+export async function listUsers(): Promise<User[]> {
+    const { data } = await http.get<User[]>('/users')
+    return data
+}
+
+export async function getUser(userId: string): Promise<User> {
+    const { data } = await http.get<User>(`/users/${userId}`)
+    return data
+}
+
+export type CreateUserForm = {
+    email: string
+    full_name?: string
+    password: string
+    is_superuser?: boolean
+}
+
+export async function createUser(form: CreateUserForm): Promise<User> {
+    const body = {
+        email: form.email,
+        full_name: form.full_name || null,
+        password: form.password,
+        is_superuser: form.is_superuser || false,
+    }
+    const { data } = await http.post<User>('/users', body)
+    return data
+}
+
+export type UpdateUserForm = {
+    full_name?: string
+    password?: string
+    is_active?: boolean
+    is_superuser?: boolean
+}
+
+export async function updateUser(userId: string, form: UpdateUserForm): Promise<User> {
+    const body: any = {}
+    if (form.full_name !== undefined) body.full_name = form.full_name
+    if (form.password !== undefined) body.password = form.password
+    if (form.is_active !== undefined) body.is_active = form.is_active
+    if (form.is_superuser !== undefined) body.is_superuser = form.is_superuser
+    const { data } = await http.put<User>(`/users/${userId}`, body)
+    return data
+}
+
+export async function deleteUser(userId: string): Promise<void> {
+    await http.delete(`/users/${userId}`)
+}
