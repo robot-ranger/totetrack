@@ -35,7 +35,7 @@ services:
     volumes:
       - media_data:/app/media
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT:-8000}:8000"
 
   frontend:
     image: ghcr.io/robot-ranger/totetrack/frontend:sha-8e0e60f
