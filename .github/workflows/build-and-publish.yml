@@ -85,5 +85,7 @@ jobs:
 
     - name: Output image digests
       run: |
-        echo "Backend image digest: ${{ steps.build-backend.outputs.digest }}"
-        echo "Frontend image digest: ${{ steps.build-frontend.outputs.digest }}"
+        echo "Backend image URLs:"
+        echo "${{ steps.meta-backend.outputs.tags }}"
+        echo "Frontend image URLs:"
+        echo "${{ steps.meta-frontend.outputs.tags }}"
