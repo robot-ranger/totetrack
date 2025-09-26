@@ -15,7 +15,6 @@ import { Sidebar } from './components/Sidebar'
 import { ProfileModal } from './components/ProfileModal'
 import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
-import PricingPage from './pages/PricingPage'
 import LandingPage from './pages/LandingPage'
 
 const sidebarWidth = 220
@@ -25,6 +24,9 @@ export default function App() {
     const { user, logout } = useAuth()
     // Track actual sidebar width (collapsible on desktop)
     const [sidebarCurrentWidth, setSidebarCurrentWidth] = useState<number>(sidebarWidth)
+    // Profile and nav state for authenticated users (always declare hooks)
+    const [profileOpen, setProfileOpen] = useState(false)
+    const [navOpen, setNavOpen] = useState(false)
 
     function toCsv(items: Item[]): string {
         const headers = ['id', 'name', 'description', 'quantity', 'tote_id', 'image_url'] as const
@@ -73,7 +75,7 @@ export default function App() {
                         <NavLink to='/'><HStack><Image src={"/media/totetrackr.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
                         <Spacer />
                         <HStack gap={3}>
-                            <Button size="sm" variant="ghost" asChild><NavLink to="/pricing">Pricing</NavLink></Button>
+                            <Button size="sm" variant="ghost" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>Pricing</Button>
                             <Button size="sm" variant="solid" colorPalette="yellow" asChild><NavLink to="/login">Login</NavLink></Button>
                             <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                         </HStack>
@@ -83,7 +85,6 @@ export default function App() {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/recover" element={<PasswordRecoveryPage />} />
-                    <Route path="/pricing" element={<PricingPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </Box>
@@ -91,8 +92,6 @@ export default function App() {
     }
 
     // Authenticated routes
-    const [profileOpen, setProfileOpen] = useState(false)
-    const [navOpen, setNavOpen] = useState(false)
     return (
         <Box display="flex" minH="100vh">
             <Sidebar
@@ -123,7 +122,6 @@ export default function App() {
                     <Route path="/" element={<TotesPage />} />
                     <Route path="/items" element={<ItemsPage />} />
                     <Route path="/users" element={<UsersPage />} />
-                    <Route path="/pricing" element={<PricingPage />} />
                     <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
