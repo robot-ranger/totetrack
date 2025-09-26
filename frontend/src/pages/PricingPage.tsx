@@ -63,7 +63,7 @@ function TierCard(t: Tier) {
   return (
     <Box
       borderWidth={t.highlight ? '2px' : '1px'}
-      borderColor={t.highlight ? 'blue.500' : 'border'}
+      borderColor={t.highlight ? 'yellow.focusRing' : 'border'}
       rounded="xl"
       p={8}
       position="relative"
@@ -71,7 +71,7 @@ function TierCard(t: Tier) {
       shadow={t.highlight ? 'md' : 'sm'}
     >
       {t.badge && (
-        <Badge colorPalette="blue" position="absolute" top={4} right={4} rounded="md" px={2} py={1} fontSize="xs">{t.badge}</Badge>
+        <Badge colorPalette="yellow" position="absolute" top={4} right={4} rounded="md" px={2} py={1} fontSize="xs">{t.badge}</Badge>
       )}
       <Stack gap={3} mb={6}>
         <Heading size="md">{t.name}</Heading>
@@ -84,12 +84,12 @@ function TierCard(t: Tier) {
       <List.Root mb={8} gap={3}>
         {t.features.map(f => (
           <List.Item key={f} display="flex" gap={3}>
-            <Icon color={t.highlight ? 'blue.500' : 'green.500'}><FiCheck /></Icon>
+            <Icon color={t.highlight ? 'yellow.500' : 'green.500'}><FiCheck /></Icon>
             <Text fontSize="sm">{f}</Text>
           </List.Item>
         ))}
       </List.Root>
-      <Button w="full" colorPalette={t.highlight ? 'blue' : 'gray'} variant={t.highlight ? 'solid' : 'outline'} asChild>
+      <Button w="full" colorPalette={t.highlight ? 'yellow' : 'gray'} variant={t.highlight ? 'solid' : 'outline'} asChild>
         <RouterLink to={t.name === 'Starter' ? '/login' : '/contact'}>{t.cta}</RouterLink>
       </Button>
     </Box>
