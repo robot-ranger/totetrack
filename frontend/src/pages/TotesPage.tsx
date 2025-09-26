@@ -5,6 +5,7 @@ import ToteForm from '../components/ToteForm'
 import ToteTable from '../components/ToteTable'
 import ItemsPage from './ItemsPage'
 import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, Spacer, SegmentGroup, VStack } from '@chakra-ui/react'
+import { FiX } from 'react-icons/fi'
 
 
 export default function TotesPage() {
@@ -43,7 +44,7 @@ export default function TotesPage() {
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                             <Heading size="md">Add a new tote</Heading>
-                            <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
+                            <Button size="sm" variant="ghost" onClick={onClose}><FiX /></Button>
                         </Box>
                         <ToteForm onCreated={(t) => { handleCreated(t); onClose(); }} />
                     </Box>
@@ -52,7 +53,7 @@ export default function TotesPage() {
             {/* Add Tote Button + Modal */}
             <HStack>
                 <Input placeholder="Search by name or UUID…" value={q} onChange={e => setQ(e.target.value)}/>
-                <Button colorPalette="blue" onClick={onOpen}>Add Tote</Button>
+                <Button colorPalette="yellow" onClick={onOpen}>Add Tote</Button>
             </HStack>
             <ToteTable totes={filtered} />
         </Stack>

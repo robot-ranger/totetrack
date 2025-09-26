@@ -111,7 +111,7 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                 </GridItem>
                 <GridItem colSpan={2}>
                     <Flex gap={3}>
-                        <Button type="submit" colorPalette="blue" disabled={submitting}>{isEdit ? 'Save Changes' : 'Add Item'}</Button>
+                        <Button type="submit" colorPalette="yellow" disabled={submitting}>{isEdit ? 'Save Changes' : 'Add Item'}</Button>
                         {isEdit && existing?.image_url && (
                             <Button type="button" variant="outline" onClick={handleRemovePhoto} disabled={removingPhoto}>
                                 {removingPhoto ? 'Removing…' : 'Remove Photo'}

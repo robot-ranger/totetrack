@@ -134,7 +134,7 @@ export default function UserForm({ user, onSubmit, onCancel, loading }: UserForm
                 <Button variant="outline" onClick={onCancel} disabled={loading}>
                     Cancel
                 </Button>
-                <Button onClick={handleSubmit} loading={loading}>
+                <Button onClick={handleSubmit} loading={loading} colorPalette={"yellow"}>
                     {isEditing ? 'Update User' : 'Create User'}
                 </Button>
             </HStack>

@@ -2,6 +2,7 @@
 import { useState, useRef, MouseEvent } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Box, Code, VStack, Button, Flex, Text } from '@chakra-ui/react'
+import { FiX } from 'react-icons/fi';
 
 export default function QRLabel({ uuid, name, compact = false }: { uuid: string; name?: string; compact?: boolean }) {
     const [open, setOpen] = useState(false)
@@ -79,7 +80,7 @@ export default function QRLabel({ uuid, name, compact = false }: { uuid: string;
                             <Text fontWeight="bold">QR Label</Text>
                             <Flex gap={2}>
                                 <Button size="sm" onClick={handlePrint} colorPalette="blue">Print</Button>
-                                <Button size="sm" variant="ghost" onClick={handleClose}>Close</Button>
+                                <Button size="sm" variant="ghost" onClick={handleClose}><FiX /></Button>
                             </Flex>
                         </Flex>
                         <VStack>

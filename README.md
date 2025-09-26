@@ -6,6 +6,14 @@ Inventory & tote tracking with fast item capture, QR labels, and mobile-friendly
 ## Overview
 ToteTrack lets you create "totes" (containers) and add items to each tote so you can search, scan, and know where everything lives. Each tote gets a QR code for printing and attaching to the tote; scanning jumps straight to the tote detail view. Great for garage / maker space / prop room / move preparation organization.
 
+### New (Sidebar & Profile Modal)
+Authenticated users now have a responsive navigation sidebar (desktop) / hamburger drawer (mobile) containing:
+- Totes (/)
+- Items (/items)
+- Users (/users) when the account is a superuser.
+
+The top bar now only includes utility actions: color mode toggle, CSV export, Profile (opens modal), and Logout. The Profile modal lets you update your full name and password (email is read-only). Changes refresh the in-memory user context automatically.
+
 ### Core Features
 - Create / delete totes with name, location, description, arbitrary metadata JSON
 - Add/update/remove items (name, quantity, description, image upload)
