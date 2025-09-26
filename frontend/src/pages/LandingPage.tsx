@@ -84,7 +84,7 @@ export default function LandingPage() {
       {/* Features Section */}
       <Box py={{ base: 16, md: 24 }} bg="bg.subtle">
         <Container maxW="7xl">
-          <Stack textAlign="center" gap={4} mb={{ base: 12, md: 20 }}>
+          <Stack textAlign="center" gap={4} mb={14}>
             <Heading size="xl">Everything you need to stay organized</Heading>
             <Text color="fg.muted" fontSize={{ base: 'md', md: 'lg' }}>Built for makers, teams, and anyone with too many totes.</Text>
           </Stack>
@@ -92,7 +92,7 @@ export default function LandingPage() {
             {features.map(f => (
               <Card.Root key={f.title} variant="elevated" p={6} rounded="xl" borderWidth="1px" shadow="sm" bg="bg">
                 <HStack mb={4} gap={3}>
-                  <Icon as={f.icon} boxSize={6} color="blue.500" />
+                  <Icon as={f.icon} boxSize={6} color={"yellow.focusRing"} />
                   <Heading size="md">{f.title}</Heading>
                 </HStack>
                 <Text fontSize="sm" color="fg.muted">{f.desc}</Text>
@@ -103,11 +103,10 @@ export default function LandingPage() {
       </Box>
 
       {/* Footer */}
-      <Box as="footer" py={12}>
-        <Container maxW="7xl">
-          <VStack gap={6}>
+      <Box as="footer" py={8}>
+          <HStack gap={6} justify={"center"} flexWrap="wrap">
             <HStack gap={3}>
-              <Image src="/media/totetrack-icon_light_30.png" alt="ToteTrackr" w={30} />
+              <Image src="/media/totetrackr.png" alt="ToteTrackr" w={30} />
               <Heading size="md">ToteTrackr</Heading>
             </HStack>
             <HStack gap={6} fontSize="sm" color="fg.muted">
@@ -115,9 +114,10 @@ export default function LandingPage() {
               <Link asChild><RouterLink to="/login">Login</RouterLink></Link>
             </HStack>
             <Separator />
+          </HStack>
+          <Flex justifyContent="center" mt={4}>
             <Text fontSize="xs" color="fg.muted">© {new Date().getFullYear()} ToteTrackr. All rights reserved.</Text>
-          </VStack>
-        </Container>
+          </Flex>
       </Box>
     </Box>
   )
