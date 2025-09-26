@@ -45,6 +45,7 @@ class ToteUpdate(ToteBase):
 class ToteOut(ToteBase):
     id: str = Field(description="UUID string")
     items: List[ItemOut] = []
+    user_id: str | None = None
 
     class Config:
         from_attributes = True

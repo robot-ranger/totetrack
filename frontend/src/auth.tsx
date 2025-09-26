@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { getMe, setAuthToken } from './api'
+import { getMe, setAuthToken, logoutServer } from './api'
 import type { User } from './types'
 
 interface AuthState {
@@ -42,9 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokenState(t)
   }
 
-  function logout() {
-    setTokenState(null)
-    setUser(null)
+  async function logout() {
+    try {
+      if (token) {
+        // Attempt server-side logout (stateless; optional)
+        await logoutServer()
+      }
+    } catch (err) {
+      // Non-fatal; proceed with local logout
+      console.warn('Logout request failed (continuing):', err)
+    } finally {
+      setTokenState(null)
+      setUser(null)
+    }
   }
 
   const value = useMemo(() => ({ user, token, setToken, refreshMe, logout }), [user, token])

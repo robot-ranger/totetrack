@@ -7,6 +7,7 @@ MEDIA_DIR.mkdir(exist_ok=True)
 
 
 def save_image(file: BinaryIO, dest_name: str) -> str:
+    """Save image file"""
     path = MEDIA_DIR / dest_name
     with open(path, "wb") as f:
         f.write(file.read())

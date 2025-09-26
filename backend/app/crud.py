@@ -9,8 +9,9 @@ from app.security import get_password_hash, verify_password, PASSWORD_RESET_TOKE
 # Totes
 
 
-def create_tote(db: Session, tote: schemas.ToteCreate) -> models.Tote:
+def create_tote(db: Session, tote: schemas.ToteCreate, user_id: str) -> models.Tote:
     m = models.Tote(
+        user_id=user_id,
         name=tote.name,
         location=tote.location,
         metadata_json=tote.metadata_json,
@@ -22,12 +23,16 @@ def create_tote(db: Session, tote: schemas.ToteCreate) -> models.Tote:
     return m
 
 
-def list_totes(db: Session):
-    return db.query(models.Tote).all()
+def list_totes(db: Session, user_id: str):
+    return db.query(models.Tote).filter(models.Tote.user_id == user_id).all()
 
 
-def get_tote(db: Session, tote_id: str):
-    return db.query(models.Tote).filter(models.Tote.id == tote_id).first()
+def get_tote(db: Session, tote_id: str, user_id: str):
+    return (
+        db.query(models.Tote)
+        .filter(models.Tote.id == tote_id, models.Tote.user_id == user_id)
+        .first()
+    )
 
 
 def delete_tote(db: Session, tote: models.Tote):
@@ -66,16 +71,32 @@ def add_item(db: Session, tote_id: str, item: schemas.ItemCreate, image_path: st
     return i
 
 
-def list_items(db: Session):
-    return db.query(models.Item).all()
+def list_items(db: Session, user_id: str):
+    # join to filter by tote ownership
+    return (
+        db.query(models.Item)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Tote.user_id == user_id)
+        .all()
+    )
 
 
-def list_items_in_tote(db: Session, tote_id: str):
-    return db.query(models.Item).filter(models.Item.tote_id == tote_id).all()
+def list_items_in_tote(db: Session, tote_id: str, user_id: str):
+    return (
+        db.query(models.Item)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Item.tote_id == tote_id, models.Tote.user_id == user_id)
+        .all()
+    )
 
 
-def get_item(db: Session, item_id: str):
-    return db.query(models.Item).filter(models.Item.id == item_id).first()
+def get_item(db: Session, item_id: str, user_id: str):
+    return (
+        db.query(models.Item)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Item.id == item_id, models.Tote.user_id == user_id)
+        .first()
+    )
 
 
 def update_item(db: Session, item: models.Item, upd: schemas.ItemUpdate, image_path: str | None = None):

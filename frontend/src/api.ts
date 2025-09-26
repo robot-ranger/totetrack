@@ -33,6 +33,11 @@ export async function getMe(): Promise<User> {
     return data
 }
 
+export async function logoutServer(): Promise<{ message: string }> {
+    const { data } = await http.post<{ message: string }>('/auth/logout')
+    return data
+}
+
 export async function requestPasswordRecovery(email: string): Promise<{ message?: string; recovery_token?: string }> {
     const { data } = await http.post('/password-recovery', { email })
     return data

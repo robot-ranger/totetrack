@@ -61,6 +61,14 @@ def login_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Ses
     return {"access_token": token, "token_type": "bearer"}
 
 
+@app.post("/auth/logout", tags=["users"])
+def logout(_: models.User = Depends(security.get_current_active_user)):
+    """Stateless JWT logout endpoint.
+    The frontend should simply discard the token. Provided for symmetry and potential future blacklist implementation.
+    """
+    return {"message": "logged out"}
+
+
 @app.get("/users/me", response_model=schemas.UserOut, tags=["users"])
 def read_users_me(current_user=Depends(security.get_current_active_user)):
     return current_user
@@ -127,26 +135,41 @@ def password_recovery_confirm(payload: schemas.PasswordRecoveryConfirm, db: Sess
 
 
 @app.post("/totes", response_model=schemas.ToteOut, tags=["totes"])
-def create_tote(tote: schemas.ToteCreate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    return crud.create_tote(db, tote)
+def create_tote(
+    tote: schemas.ToteCreate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    return crud.create_tote(db, tote, user_id=current_user.id)
 
 
 @app.get("/totes", response_model=List[schemas.ToteOut], tags=["totes"])
-def get_totes(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    return crud.list_totes(db)
+def get_totes(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    return crud.list_totes(db, user_id=current_user.id)
 
 
 @app.get("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
-def get_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    m = crud.get_tote(db, tote_id)
+def get_tote(
+    tote_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    m = crud.get_tote(db, tote_id, user_id=current_user.id)
     if not m:
         raise HTTPException(status_code=404, detail="Tote not found")
     return m
 
 
 @app.delete("/totes/{tote_id}", tags=["totes"])
-def delete_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    tote = crud.get_tote(db, tote_id)
+def delete_tote(
+    tote_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
     # Cleanup item images before deleting via cascade
@@ -158,8 +181,13 @@ def delete_tote(tote_id: str, db: Session = Depends(get_session), _: models.User
 
 
 @app.put("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
-def update_tote(tote_id: str, tote_in: schemas.ToteUpdate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    tote = crud.get_tote(db, tote_id)
+def update_tote(
+    tote_id: str,
+    tote_in: schemas.ToteUpdate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
     updated = crud.update_tote(db, tote, tote_in)
@@ -177,10 +205,10 @@ async def create_item(
     description: str | None = Form(None),
     image: UploadFile | None = File(None),
     db: Session = Depends(get_session),
-    _: models.User = Depends(security.get_current_active_user)
+    current_user: models.User = Depends(security.get_current_active_user),
 ):
     # Validate tote exists
-    tote = crud.get_tote(db, tote_id)
+    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
 
@@ -204,8 +232,11 @@ async def create_item(
 
 
 @app.get("/items", response_model=List[schemas.ItemOut], tags=["items"])
-async def all_items(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    rows = crud.list_items(db)
+async def all_items(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    rows = crud.list_items(db, user_id=current_user.id)
     out = []
     for r in rows:
         out.append({
@@ -220,8 +251,12 @@ async def all_items(db: Session = Depends(get_session), _: models.User = Depends
 
 
 @app.get("/totes/{tote_id}/items", response_model=List[schemas.ItemOut], tags=["items"])
-async def items_in_tote(tote_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    rows = crud.list_items_in_tote(db, tote_id)
+async def items_in_tote(
+    tote_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    rows = crud.list_items_in_tote(db, tote_id, user_id=current_user.id)
     out = []
     for r in rows:
         out.append({
@@ -243,9 +278,9 @@ async def update_item(
     description: str | None = Form(None),
     image: UploadFile | None = File(None),
     db: Session = Depends(get_session),
-    _: models.User = Depends(security.get_current_active_user)
+    current_user: models.User = Depends(security.get_current_active_user),
 ):
-    item = crud.get_item(db, item_id)
+    item = crud.get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
@@ -273,8 +308,12 @@ async def update_item(
 
 
 @app.delete("/items/{item_id}", tags=["items"])
-async def delete_item(item_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
-    item = crud.get_item(db, item_id)
+async def delete_item(
+    item_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    item = crud.get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     crud.delete_item(db, item)
@@ -282,11 +321,15 @@ async def delete_item(item_id: str, db: Session = Depends(get_session), _: model
 
 
 @app.delete("/items/{item_id}/image", response_model=schemas.ItemOut, tags=["items"])
-async def delete_item_image(item_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_user)):
+async def delete_item_image(
+    item_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
     """Remove an item's associated image file and clear its image_path.
     Leaves the item record intact.
     """
-    item = crud.get_item(db, item_id)
+    item = crud.get_item(db, item_id, user_id=current_user.id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     if item.image_path:

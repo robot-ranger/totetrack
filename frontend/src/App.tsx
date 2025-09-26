@@ -1,11 +1,11 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton } from '@chakra-ui/react'
+import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton, Menu, MenuContent, MenuTrigger, Portal } from '@chakra-ui/react'
 import { useColorMode } from './components/ui/color-mode'
 import TotesPage from './pages/TotesPage'
 import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import UsersPage from './pages/UsersPage'
-import { FiArchive, FiCamera, FiDownloadCloud, FiMoon, FiSun, FiTag, FiUsers } from 'react-icons/fi'
+import { FiArchive, FiDownloadCloud, FiMoon, FiSun, FiTag, FiUsers, FiLogOut } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
 import type { Item } from './types'
@@ -87,6 +87,9 @@ export default function App() {
                 )}
                 <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                 <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
+                <Button size="sm" variant="outline" onClick={() => { logout(); }}>
+                    <HStack><Icon size={'sm'}><FiLogOut /></Icon>Logout</HStack>
+                </Button>
             </HStack>
             <Routes>
                 <Route path="/" element={<TotesPage />} />
