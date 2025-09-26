@@ -75,7 +75,6 @@ export default function App() {
                         <NavLink to='/'><HStack><Image src={"/media/totetrackr.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
                         <Spacer />
                         <HStack gap={3}>
-                            <Button size="sm" variant="ghost" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>Pricing</Button>
                             <Button size="sm" variant="solid" colorPalette="yellow" asChild><NavLink to="/login">Login</NavLink></Button>
                             <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                         </HStack>
@@ -112,7 +111,7 @@ export default function App() {
                         <NavLink to='/'><HStack><Image src={"/media/totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
                     </HStack>
                     <Spacer />
-                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                     <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
                     <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
                         <HStack gap={1}><Icon size={'sm'}><FiUser /></Icon><span>Profile</span></HStack>
@@ -125,7 +124,7 @@ export default function App() {
                     <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-                <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} />
+                <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={logout} />
             </Box>
         </Box>
     )
