@@ -12,6 +12,7 @@ import type { Item } from './types'
 import { useAuth } from './auth'
 import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
+import PricingPage from './pages/PricingPage'
 
 
 export default function App() {
@@ -61,13 +62,15 @@ export default function App() {
         return (
             <Container maxW="6xl" py={6}>
                 <HStack gap={6} mb={6}>
-                    <NavLink to='/'><HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="ToteTrack" w={30}/><Heading size="lg">ToteTrack</Heading></HStack></NavLink>
+                    <NavLink to='/'><HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
+                    <RouterLink to="/pricing"><HStack>Pricing</HStack></RouterLink>
                     <Spacer />
                     <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                 </HStack>
                 <Routes>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/recover" element={<PasswordRecoveryPage />} />
+                    <Route path="/pricing" element={<PricingPage />} />
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             </Container>
@@ -82,6 +85,7 @@ export default function App() {
                 <Spacer />
                 <RouterLink to="/"><HStack><Icon size={'sm'}><FiArchive/></Icon>Totes</HStack></RouterLink>
                 <RouterLink to="/items"><HStack><Icon size={'sm'}><FiTag/></Icon>Items</HStack></RouterLink>
+                <RouterLink to="/pricing"><HStack>Pricing</HStack></RouterLink>
                 {user.is_superuser && (
                     <RouterLink to="/users"><HStack><Icon size={'sm'}><FiUsers/></Icon>Users</HStack></RouterLink>
                 )}
@@ -95,6 +99,7 @@ export default function App() {
                 <Route path="/" element={<TotesPage />} />
                 <Route path="/items" element={<ItemsPage />} />
                 <Route path="/users" element={<UsersPage />} />
+                <Route path="/pricing" element={<PricingPage />} />
                 <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
