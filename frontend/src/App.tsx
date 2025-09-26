@@ -6,7 +6,7 @@ import TotesPage from './pages/TotesPage'
 import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import UsersPage from './pages/UsersPage'
-import { FiDownloadCloud, FiMoon, FiSun, FiMenu, FiUser } from 'react-icons/fi'
+import { FiDownloadCloud, FiMoon, FiSun, FiMenu, FiUser, FiSettings } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
 import type { Item } from './types'
@@ -114,7 +114,7 @@ export default function App() {
                     <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
                     <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
                     <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
-                        <HStack gap={1}><Icon size={'sm'}><FiUser /></Icon><span>Profile</span></HStack>
+                        <Icon size={'sm'}><FiSettings /></Icon>
                     </Button>
                 </HStack>
                 <Routes>
