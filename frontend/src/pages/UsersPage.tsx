@@ -13,7 +13,7 @@ import {
     Portal,
     Flex,
 } from '@chakra-ui/react'
-import { FiMoreVertical, FiEdit2, FiTrash2, FiPlus } from 'react-icons/fi'
+import { FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiX, FiUserPlus } from 'react-icons/fi'
 import { useAuth } from '../auth'
 import { listUsers, createUser, updateUser, deleteUser } from '../api'
 import type { User } from '../types'
@@ -127,6 +127,7 @@ export default function UsersPage() {
                         <M.Content>
                             <M.Item
                                 value="edit"
+                                color="fg.info"
                                 onClick={() => {
                                     setEditingUser(user)
                                     editModal.onOpen()
@@ -138,6 +139,7 @@ export default function UsersPage() {
                             {canDelete && (
                                 <M.Item
                                     value="delete"
+                                    color="fg.error"
                                     onClick={() => {
                                         setDeletingUser(user)
                                         deleteModal.onOpen()
@@ -162,8 +164,8 @@ export default function UsersPage() {
         <VStack align="stretch" gap={6}>
             <HStack justify="space-between">
                 <Heading size="lg">Users</Heading>
-                <Button onClick={createModal.onOpen}>
-                    <FiPlus style={{ marginRight: '8px' }} />
+                <Button onClick={createModal.onOpen} colorPalette={"yellow"}>
+                    <FiUserPlus style={{ marginRight: '8px' }} />
                     Add User
                 </Button>
             </HStack>
@@ -225,7 +227,7 @@ export default function UsersPage() {
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Flex justify="space-between" align="center" mb={4}>
                             <Heading size="md">Create New User</Heading>
-                            <Button size="sm" variant="ghost" onClick={createModal.onClose}>Close</Button>
+                            <Button size="xs" variant="ghost" onClick={createModal.onClose}><FiX /></Button>
                         </Flex>
                         <UserForm
                             onSubmit={handleCreateUser}
@@ -242,7 +244,7 @@ export default function UsersPage() {
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Flex justify="space-between" align="center" mb={4}>
                             <Heading size="md">Edit User</Heading>
-                            <Button size="sm" variant="ghost" onClick={() => { editModal.onClose(); setEditingUser(null) }}>Close</Button>
+                            <Button size="xs" variant="ghost" onClick={() => { editModal.onClose(); setEditingUser(null) }}><FiX /></Button>
                         </Flex>
                         <UserForm
                             user={editingUser}
@@ -260,7 +262,7 @@ export default function UsersPage() {
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Flex justify="space-between" align="center" mb={4}>
                             <Heading size="md">Delete User</Heading>
-                            <Button size="sm" variant="ghost" onClick={() => { deleteModal.onClose(); setDeletingUser(null) }}>Close</Button>
+                            <Button size="sm" variant="ghost" onClick={() => { deleteModal.onClose(); setDeletingUser(null) }}><FiX /></Button>
                         </Flex>
                         <VStack gap={4}>
                             <Text>
@@ -270,7 +272,7 @@ export default function UsersPage() {
                                 <Button variant="outline" onClick={() => { deleteModal.onClose(); setDeletingUser(null) }}>
                                     Cancel
                                 </Button>
-                                <Button colorScheme="red" onClick={handleDeleteUser}>
+                                <Button colorPalette="red" onClick={handleDeleteUser}>
                                     Delete User
                                 </Button>
                             </HStack>

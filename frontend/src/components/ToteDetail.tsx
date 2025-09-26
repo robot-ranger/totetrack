@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer, Link } from '@chakra-ui/react'
+import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer } from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
 import { getTote, itemsInTote, deleteTote } from '../api'
 import type { Tote, Item } from '../types'
 import ItemForm from './ItemForm'
 import ToteForm from './ToteForm'
 import QRLabel from './QRLabel'
-import { FiEdit3, FiExternalLink, FiMenu, FiMoreVertical, FiPrinter, FiTrash } from 'react-icons/fi'
+import { FiEdit3, FiExternalLink, FiMenu, FiMoreVertical, FiPrinter, FiTrash, FiX } from 'react-icons/fi'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -50,17 +51,22 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                             </Flex>
                         </VStack>
                         <VStack align={'end'}>
-                            {inList && 
-                            <Box asChild onClick={() => window.location.href = `totes/${tote.id}`}>
-                                <Link><FiExternalLink /></Link>
-                            </Box>}
+                            {inList && (
+                                <RouterLink
+                                    to={`/totes/${tote.id}`}
+                                    aria-label={`Open details for tote ${tote.name || tote.id}`}
+                                    title={tote.name || tote.id}
+                                >
+                                    <FiExternalLink />
+                                </RouterLink>
+                            )}
                             <QRLabel uuid={tote.id} name={tote.name || tote.id} compact />
                         </VStack>
                     </Flex>
                     <Separator my={4} />
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Heading size="sm">Items</Heading>
-                        <Button size="sm" colorPalette="blue" onClick={() => { setEditing(null); addModal.onOpen(); }}>Add Item</Button>
+                        <Button size="sm" colorPalette="yellow" onClick={() => { setEditing(null); addModal.onOpen(); }}>Add Item</Button>
                     </Box>
                     {items.length === 0 ? (
                         <Text mt={2}>No items yet.</Text>
@@ -95,7 +101,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                             <Heading size="md">{editing ? 'Edit Item' : 'Add Item'}</Heading>
-                            <Button size="sm" variant="ghost" onClick={addModal.onClose}>Close</Button>
+                            <Button size="sm" variant="ghost" onClick={addModal.onClose}><FiX /></Button>
                         </Box>
                         {editing?.image_url && (
                             <Box mb={4} display="flex" justifyContent="center">
@@ -135,7 +141,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                             <Heading size="md">Edit Tote</Heading>
-                            <Button size="sm" variant="ghost" onClick={editToteModal.onClose}>Close</Button>
+                            <Button size="sm" variant="ghost" onClick={editToteModal.onClose}><FiX /></Button>
                         </Box>
                         <ToteForm existing={tote} onUpdated={(upd) => { setTote(upd); editToteModal.onClose(); }} />
                     </Box>
