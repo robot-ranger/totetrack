@@ -287,7 +287,7 @@ async def create_item(
     image_path = None
     if image is not None:
         ext = (image.filename or "bin").split(".")[-1].lower()
-        safe_name = name.replace(" ", "_")[:40]
+        safe_name = image_store.sanitize_filename(name)
         dest = f"tote_{tote_id}_item_{safe_name}.{ext}"
         image_path = image_store.save_image(image.file, dest)
 
@@ -359,7 +359,7 @@ async def update_item(
     image_path = None
     if image is not None:
         ext = (image.filename or "bin").split(".")[-1].lower()
-        safe_name = (name or item.name).replace(" ", "_")[:40]
+        safe_name = image_store.sanitize_filename(name or item.name)
         dest = f"tote_{item.tote_id}_item_{safe_name}_{item.id}.{ext}"
         image_path = image_store.save_image(image.file, dest)
 
