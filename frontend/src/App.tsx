@@ -7,10 +7,11 @@ import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import UsersPage from './pages/UsersPage'
 import LocationsPage from './pages/LocationsPage'
+import CheckedOutItemsPage from './pages/CheckedOutItemsPage'
 import { FiDownloadCloud, FiMoon, FiSun, FiMenu, FiUser, FiSettings } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
-import type { Item } from './types'
+import type { ItemWithCheckoutStatus } from './types'
 import { useAuth } from './auth'
 import { Sidebar } from './components/Sidebar'
 import { ProfileModal } from './components/ProfileModal'
@@ -29,7 +30,7 @@ export default function App() {
     const [profileOpen, setProfileOpen] = useState(false)
     const [navOpen, setNavOpen] = useState(false)
 
-    function toCsv(items: Item[]): string {
+    function toCsv(items: ItemWithCheckoutStatus[]): string {
         const headers = ['id', 'name', 'description', 'quantity', 'tote_id', 'image_url'] as const
         const escape = (val: unknown) => {
             if (val === null || val === undefined) return ''
@@ -121,6 +122,7 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<TotesPage />} />
                     <Route path="/items" element={<ItemsPage />} />
+                    <Route path="/checked-out" element={<CheckedOutItemsPage />} />
                     <Route path="/locations" element={<LocationsPage />} />
                     <Route path="/users" element={<UsersPage />} />
                     <Route path="/totes/:toteId" element={<ToteDetailPage />} />

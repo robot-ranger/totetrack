@@ -125,3 +125,27 @@ class PasswordRecoveryInit(BaseModel):
 class PasswordRecoveryConfirm(BaseModel):
     token: str
     new_password: str
+
+
+# Checkout schemas
+
+class CheckedOutItemOut(BaseModel):
+    id: str
+    item_id: str
+    user_id: str
+    checked_out_at: datetime
+    # Include related objects for convenience
+    item: ItemOut
+    user: UserOut
+
+    class Config:
+        from_attributes = True
+
+
+class ItemWithCheckoutStatus(ItemOut):
+    is_checked_out: bool = False
+    checked_out_by: Optional[UserOut] = None
+    checked_out_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

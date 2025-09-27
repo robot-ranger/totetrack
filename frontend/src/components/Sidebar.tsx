@@ -1,6 +1,7 @@
 import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator } from '@chakra-ui/react'
 import { NavLink } from 'react-router-dom'
 import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin } from 'react-icons/fi'
+import { LuPackageMinus } from 'react-icons/lu'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
 
@@ -26,6 +27,7 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
     { to: '/locations', label: 'Locations', icon: FiMapPin },
     { to: '/', label: 'Totes', icon: FiArchive },
     { to: '/items', label: 'Items', icon: FiTag },
+    { to: '/checked-out', label: 'Checked Out', icon: LuPackageMinus },
   ]
   if (user?.is_superuser) {
     links.push({ to: '/users', label: 'Users', icon: FiUsers })
@@ -79,7 +81,11 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
                 color={isActive ? 'accent' : 'fg'}
                 justify={isCollapsed ? 'center' : 'flex-start'}
               >
-                <Icon as={l.icon} />
+                {(l as any).imageIcon ? (
+                  <Image src={(l as any).imageIcon} color='fg' alt={l.label} boxSize="16px" />
+                ) : l.icon ? (
+                  <Icon as={l.icon} />
+                ) : null}
                 {!isCollapsed && <Text>{l.label}</Text>}
               </HStack>
             )}

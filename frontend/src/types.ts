@@ -36,3 +36,18 @@ export interface User {
     created_at?: string | null
     updated_at?: string | null
 }
+
+export interface CheckedOutItem {
+    id: string
+    item_id: string
+    user_id: string
+    checked_out_at: string
+    item: Item
+    user: User
+}
+
+export interface ItemWithCheckoutStatus extends Item {
+    is_checked_out: boolean
+    checked_out_by?: User | null
+    checked_out_at?: string | null
+}

@@ -291,3 +291,75 @@ def consume_reset_token(db: Session, token: str, new_password: str):
             update_user_password(db, user, new_password)
             return user
     return None
+
+
+# Checkout functionality
+
+def checkout_item(db: Session, item_id: str, user_id: str) -> models.CheckedOutItem | None:
+    """Check out an item to a user. Returns None if item is already checked out or doesn't exist."""
+    # First verify the item exists and belongs to the user
+    item = get_item(db, item_id, user_id)
+    if not item:
+        return None
+
+    # Check if already checked out
+    existing_checkout = (
+        db.query(models.CheckedOutItem)
+        .filter(models.CheckedOutItem.item_id == item_id)
+        .first()
+    )
+    if existing_checkout:
+        return None  # Already checked out
+
+    # Create checkout record
+    checkout = models.CheckedOutItem(
+        item_id=item_id,
+        user_id=user_id,
+        checked_out_at=datetime.utcnow()
+    )
+    db.add(checkout)
+    db.commit()
+    db.refresh(checkout)
+    return checkout
+
+
+def checkin_item(db: Session, item_id: str, user_id: str) -> bool:
+    """Check in an item. Returns True if successful, False if not checked out or not owned by user."""
+    # Verify the item belongs to the user
+    item = get_item(db, item_id, user_id)
+    if not item:
+        return False
+
+    # Find and delete the checkout record
+    checkout = (
+        db.query(models.CheckedOutItem)
+        .filter(models.CheckedOutItem.item_id == item_id)
+        .first()
+    )
+    if not checkout:
+        return False  # Not checked out
+
+    db.delete(checkout)
+    db.commit()
+    return True
+
+
+def get_checked_out_items(db: Session, user_id: str) -> list[models.CheckedOutItem]:
+    """Get all items checked out by or owned by a user."""
+    return (
+        db.query(models.CheckedOutItem)
+        .join(models.Item, models.CheckedOutItem.item_id == models.Item.id)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Tote.user_id == user_id)
+        .all()
+    )
+
+
+def get_item_with_checkout_status(db: Session, item_id: str, user_id: str) -> models.Item | None:
+    """Get an item with its checkout information."""
+    return (
+        db.query(models.Item)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Item.id == item_id, models.Tote.user_id == user_id)
+        .first()
+    )

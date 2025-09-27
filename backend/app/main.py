@@ -303,14 +303,23 @@ async def create_item(
     })
 
 
-@app.get("/items", response_model=List[schemas.ItemOut], tags=["items"])
+@app.get("/items", response_model=List[schemas.ItemWithCheckoutStatus], tags=["items"])
 async def all_items(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    rows = crud.list_all_items(db)
+    rows = crud.list_items(db, current_user.id)
     out = []
     for r in rows:
+        checkout_info = {
+            "is_checked_out": r.checkout is not None,
+            "checked_out_by": None,
+            "checked_out_at": None,
+        }
+        if r.checkout:
+            checkout_info["checked_out_by"] = r.checkout.user
+            checkout_info["checked_out_at"] = r.checkout.checked_out_at
+        
         out.append({
             "id": r.id,
             "name": r.name,
@@ -318,6 +327,7 @@ async def all_items(
             "quantity": r.quantity,
             "image_url": f"/media/{r.image_path.split('/')[-1]}" if r.image_path else None,
             "tote_id": r.tote_id,
+            **checkout_info,
         })
     return out
 
@@ -418,3 +428,46 @@ async def delete_item_image(
         "image_url": None,
         "tote_id": item.tote_id,
     })
+
+
+# Checkout functionality
+
+@app.post("/items/{item_id}/checkout", response_model=schemas.CheckedOutItemOut, tags=["items"])
+async def checkout_item(
+    item_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    """Check out an item to the current user."""
+    checkout = crud.checkout_item(db, item_id, current_user.id)
+    if not checkout:
+        raise HTTPException(
+            status_code=400, 
+            detail="Item not found, already checked out, or access denied"
+        )
+    return checkout
+
+
+@app.delete("/items/{item_id}/checkin", tags=["items"])
+async def checkin_item(
+    item_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    """Check in an item (remove from checked out list)."""
+    success = crud.checkin_item(db, item_id, current_user.id)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Item not found, not checked out, or access denied"
+        )
+    return {"message": "Item checked in successfully"}
+
+
+@app.get("/checked-out-items", response_model=List[schemas.CheckedOutItemOut], tags=["items"])
+async def get_checked_out_items(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    """Get all items checked out from totes owned by the current user."""
+    return crud.get_checked_out_items(db, current_user.id)

@@ -1,6 +1,6 @@
 // frontend/src/api.ts
 import axios from 'axios'
-import type { Tote, Item, User, Location } from './types'
+import type { Tote, Item, User, Location, CheckedOutItem, ItemWithCheckoutStatus } from './types'
 
 // Allow overriding via Vite env; falls back to Vite dev proxy ("/api")
 const baseURL = import.meta.env.VITE_API_BASE ?? '/api'
@@ -146,8 +146,8 @@ export async function addItem(toteId: string, form: AddItemForm): Promise<Item> 
     return data
 }
 
-export async function listItems(): Promise<Item[]> {
-    const { data } = await http.get<Item[]>('/items')
+export async function listItems(): Promise<ItemWithCheckoutStatus[]> {
+    const { data } = await http.get<ItemWithCheckoutStatus[]>('/items')
     return data
 }
 
@@ -230,4 +230,21 @@ export async function updateUser(userId: string, form: UpdateUserForm): Promise<
 
 export async function deleteUser(userId: string): Promise<void> {
     await http.delete(`/users/${userId}`)
+}
+
+// ——— Checkout functionality ———
+
+export async function checkoutItem(itemId: string): Promise<CheckedOutItem> {
+    const { data } = await http.post<CheckedOutItem>(`/items/${itemId}/checkout`)
+    return data
+}
+
+export async function checkinItem(itemId: string): Promise<{ message: string }> {
+    const { data } = await http.delete<{ message: string }>(`/items/${itemId}/checkin`)
+    return data
+}
+
+export async function fetchCheckedOutItems(): Promise<CheckedOutItem[]> {
+    const { data } = await http.get<CheckedOutItem[]>('/checked-out-items')
+    return data
 }

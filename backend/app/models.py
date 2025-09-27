@@ -45,6 +45,24 @@ class Item(Base):
     image_path = Column(String, nullable=True)  # stored relative to /media
 
     tote = relationship("Tote", back_populates="items")
+    checkout = relationship("CheckedOutItem", back_populates="item", uselist=False, cascade="all, delete-orphan")
+
+
+class CheckedOutItem(Base):
+    __tablename__ = "checked_out_items"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    item_id = Column(String, ForeignKey("items.id"), nullable=False, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    checked_out_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # Relationships
+    item = relationship("Item", back_populates="checkout")
+    user = relationship("User", back_populates="checked_out_items")
+
+    # Unique constraint to prevent double checkout
+    __table_args__ = (
+        UniqueConstraint('item_id', name='uq_checked_out_items_item_id'),
+    )
 
 
 class User(Base):
@@ -66,3 +84,4 @@ class User(Base):
 
     totes = relationship("Tote", back_populates="owner", cascade="all, delete-orphan")
     locations = relationship("Location", back_populates="owner", cascade="all, delete-orphan")
+    checked_out_items = relationship("CheckedOutItem", back_populates="user", cascade="all, delete-orphan")
