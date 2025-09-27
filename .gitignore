@@ -9,4 +9,4 @@ dist/
 *egg-info/
 *.pem
 *.db
-/media
+backend/media/
