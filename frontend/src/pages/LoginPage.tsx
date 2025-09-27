@@ -42,7 +42,7 @@ export default function LoginPage() {
               <Input id="password" type="password" value={password} onChange={e => setPassword(e.currentTarget.value)} required />
             </Box>
             {error && <Text color="red.500" fontSize="sm">{error}</Text>}
-            <Button type="submit" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</Button>
+            <Button type="submit" colorPalette={"yellow"} disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</Button>
             <Box>
               <Link asChild color="blue.500">
                 <RouterLink to="/recover">Forgot password?</RouterLink>

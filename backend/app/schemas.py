@@ -28,9 +28,32 @@ class ItemOut(ItemBase):
         from_attributes = True
 
 
+class LocationBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class LocationCreate(LocationBase):
+    pass
+
+
+class LocationUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class LocationOut(LocationBase):
+    id: str
+    user_id: str
+
+    class Config:
+        from_attributes = True
+
+
 class ToteBase(BaseModel):
     name: Optional[str] = None
-    location: Optional[str] = None
+    location: Optional[str] = None  # Keep for backward compatibility
+    location_id: Optional[str] = None
     metadata_json: Optional[str] = None
     description: Optional[str] = None
 
@@ -46,6 +69,7 @@ class ToteOut(ToteBase):
     id: str = Field(description="UUID string")
     items: List[ItemOut] = []
     user_id: str | None = None
+    location_obj: Optional[LocationOut] = None
 
     class Config:
         from_attributes = True

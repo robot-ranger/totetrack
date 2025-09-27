@@ -5,12 +5,24 @@ from sqlalchemy.orm import relationship
 from app.db import Base
 
 
+class Location(Base):
+    __tablename__ = "locations"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+
+    owner = relationship("User", back_populates="locations")
+    totes = relationship("Tote", back_populates="location_obj")
+
+
 class Tote(Base):
     __tablename__ = "totes"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String, nullable=True)
-    location = Column(String, nullable=True)
+    location = Column(String, nullable=True)  # Keep for backward compatibility
+    location_id = Column(String, ForeignKey("locations.id"), nullable=True, index=True)
     metadata_json = Column(Text, nullable=True)  # JSON string or notes
     # physical description / size / brand
     description = Column(Text, nullable=True)
@@ -20,6 +32,7 @@ class Tote(Base):
     )
 
     owner = relationship("User", back_populates="totes")
+    location_obj = relationship("Location", back_populates="totes")
 
 
 class Item(Base):
@@ -52,3 +65,4 @@ class User(Base):
     )
 
     totes = relationship("Tote", back_populates="owner", cascade="all, delete-orphan")
+    locations = relationship("Location", back_populates="owner", cascade="all, delete-orphan")

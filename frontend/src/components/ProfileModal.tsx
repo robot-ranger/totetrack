@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { Dialog, Button, VStack, Input, Text, HStack, Box, Avatar } from '@chakra-ui/react'
+import { Dialog, Button, VStack, Input, Text, HStack, Box, Avatar, CloseButton } from '@chakra-ui/react'
 import { useAuth } from '../auth'
 import { updateUser } from '../api'
-import { FiX } from 'react-icons/fi'
+import { FiLogOut, FiSave, FiX } from 'react-icons/fi'
 
 interface ProfileModalProps {
   open: boolean
   onClose: () => void
+  onLogout: () => void
 }
 
-export function ProfileModal({ open, onClose }: ProfileModalProps) {
+export function ProfileModal({ open, onClose, onLogout }: ProfileModalProps) {
   const { user, refreshMe } = useAuth()
   const [fullName, setFullName] = useState(user?.full_name || '')
   const [password, setPassword] = useState('')
@@ -50,7 +51,9 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
         <D.Content maxW="400px">
           <D.Header>
             <D.Title>Edit Profile</D.Title>
-            <D.CloseTrigger />
+            <D.CloseTrigger asChild>
+              <CloseButton size="sm" />
+            </D.CloseTrigger>
           </D.Header>
           <D.Body>
             <VStack gap={4} align="stretch">
@@ -78,9 +81,9 @@ export function ProfileModal({ open, onClose }: ProfileModalProps) {
             </VStack>
           </D.Body>
           <D.Footer>
-            <HStack gap={2} justify="flex-end" w="full">
-              <Button variant="ghost" size="sm" onClick={onClose}><FiX /></Button>
-              <Button size="sm" colorPalette={"yellow"} onClick={handleSave} loading={loading} disabled={loading}>Save</Button>
+            <HStack gap={2} justify="space-between" w="full">
+              <Button variant="surface" size="sm" colorPalette="red" onClick={onLogout}><FiLogOut/> Logout</Button>
+              <Button size="sm" colorPalette={"yellow"} onClick={handleSave} loading={loading} disabled={loading}><FiSave/> Save</Button>
             </HStack>
           </D.Footer>
         </D.Content>
