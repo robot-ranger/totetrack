@@ -55,6 +55,7 @@ const tiers: Tier[] = [
     period: '/mo',
     description: 'Basic tracking for personal use and small experiments.',
     features: [
+      'Manage up to 2 Locations',
       'Track up to 8 totes',
       'Unlimited items per tote',
       'CSV export',
@@ -68,6 +69,7 @@ const tiers: Tier[] = [
     period: '/mo',
     description: 'Advanced tracking with collaboration features for growing teams.',
     features: [
+      'Unlimited locations',
       'Unlimited totes',
       'Custom storage locations',
       'User management',
@@ -168,7 +170,7 @@ export default function LandingPage() {
                     bg: 'bg.inverted',
                 }}
               >
-                <Image src="/media/totetrackr_shelf.png" alt="App preview" w="100%" h="auto" objectFit="cover" p={12} />
+                <Image src="totetrackr_shelf.png" alt="App preview" w="100%" h="auto" objectFit="cover" p={12} />
               </Box>
             </Flex>
           </Stack>
@@ -216,7 +218,7 @@ export default function LandingPage() {
       <Box as="footer" py={8}>
           <HStack gap={6} justify={"center"} flexWrap="wrap">
             <HStack gap={3}>
-              <Image src="/media/totetrackr.png" alt="ToteTrackr" w={30} />
+              <Image src="totetrackr.png" alt="ToteTrackr" w={30} />
               <Heading size="md">ToteTrackr</Heading>
             </HStack>
             <HStack gap={6} fontSize="sm" color="fg.muted">

@@ -73,7 +73,7 @@ export default function App() {
             <Box>
                 <Container maxW="6xl" py={6}>
                     <HStack gap={6} mb={4}>
-                        <NavLink to='/'><HStack><Image src={"/media/totetrackr.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
+                        <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
                         <Spacer />
                         <HStack gap={3}>
                             <Button size="sm" variant="solid" colorPalette="yellow" asChild><NavLink to="/login">Login</NavLink></Button>
@@ -109,7 +109,7 @@ export default function App() {
                         <IconButton display={{ base: 'inline-flex', md: 'none' }} aria-label="Open navigation" variant="ghost" size="sm" onClick={() => setNavOpen(true)}>
                             <FiMenu />
                         </IconButton>
-                        <NavLink to='/'><HStack><Image src={"/media/totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
+                        <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
                     </HStack>
                     <Spacer />
                     <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>

@@ -133,7 +133,7 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
             <D.Content maxW="240px" display="flex" flexDirection="column" maxH="100vh">
               <D.Header fontSize="md" px={4} py={3}>
                 <HStack justify="space-between" w="full">
-                  <HStack><Image src={"/media/totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack>
+                  <HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack>
                   <D.CloseTrigger asChild>
                     <IconButton aria-label="Close" size="xs" variant="ghost"><FiX /></IconButton>
                   </D.CloseTrigger>
