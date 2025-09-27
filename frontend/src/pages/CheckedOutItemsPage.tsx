@@ -9,7 +9,8 @@ import {
     VStack, 
     HStack,
     Badge,
-    Alert
+    Alert,
+    Heading
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 

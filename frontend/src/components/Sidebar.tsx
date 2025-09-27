@@ -130,20 +130,6 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
                     ) : l.icon ? (
                       <Icon as={l.icon} />
                     ) : null}
-                    <Badge
-                      position="absolute"
-                      top="-8px"
-                      right="-8px"
-                      size="sm"
-                      variant="solid"
-                      colorPalette="blue"
-                      fontSize="xs"
-                      minW="16px"
-                      h="16px"
-                      borderRadius="full"
-                    >
-                      {l.count}
-                    </Badge>
                   </Box>
                 ) : (
                   <>

@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer, Link, Badge, HStack } from '@chakra-ui/react'
+import { Box, Button, Heading, Separator, Text, VStack, Flex, Link, Image } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { getTote, itemsInTote, deleteTote, checkoutItem, checkinItem, listItems } from '../api'
+import { getTote, deleteTote, checkoutItem, checkinItem, listItems } from '../api'
 import type { Tote, Item, ItemWithCheckoutStatus } from '../types'
 import ItemForm from './ItemForm'
 import ToteForm from './ToteForm'
 import QRLabel from './QRLabel'
-import { FiEdit3, FiExternalLink, FiMenu, FiMoreVertical, FiPrinter, FiTrash, FiX } from 'react-icons/fi'
+import ItemsTable from './ItemsTable'
+import { FiExternalLink, FiX } from 'react-icons/fi'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -15,8 +16,6 @@ function useSimpleDisclosure(initial = false) {
 }
 
 export default function ToteDetail({ toteId, inList = false }: { toteId: string, inList?: boolean }) {
-    // Temporary alias to relax Menu subcomponent typings in this project setup
-    const M = Menu as any
     const [tote, setTote] = useState<Tote | null>(null)
     const [items, setItems] = useState<ItemWithCheckoutStatus[]>([])
     const addModal = useSimpleDisclosure()
@@ -74,7 +73,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                 <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editToteModal.onOpen}>Edit Tote</Button>
                                 <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Tote</Button>
                             </Flex>
-                            <Text color={'fg.subtle'}>Location: {tote.location_obj?<Link variant="underline" color="cyan.500">{tote.location_obj?.name}</Link>: 'Unassigned'}</Text>
+                            <Text color={'fg.subtle'}>Location: {tote.location_obj?<Link variant="underline" color="teal.500">{tote.location_obj?.name}</Link>: 'Unassigned'}</Text>
                         </VStack>
                         <VStack align={'end'}>
                             {inList && (
@@ -97,63 +96,15 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                     {items.length === 0 ? (
                         <Text mt={2}>No items yet.</Text>
                     ) : (
-                        <Table.Root size="sm" variant="line" mt={2}>
-                            <Table.Header>
-                                <Table.Row>
-                                    <Table.ColumnHeader w="110px">Photo</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Name</Table.ColumnHeader>
-                                    <Table.ColumnHeader w="80px">Qty</Table.ColumnHeader>
-                                    <Table.ColumnHeader w="120px">Status</Table.ColumnHeader>
-                                    <Table.ColumnHeader>Description</Table.ColumnHeader>
-                                    <Table.ColumnHeader w="150px">Actions</Table.ColumnHeader>
-                                </Table.Row>
-                            </Table.Header>
-                            <Table.Body>
-                                {items.map(it => (
-                                    <Table.Row key={it.id} _hover={{ bg: 'bg.muted' }}>
-                                        <Table.Cell>{it.image_url && <Image src={it.image_url} alt={it.name} boxSize="60px" objectFit="cover" borderRadius="md" />}</Table.Cell>
-                                        <Table.Cell>{it.name}</Table.Cell>
-                                        <Table.Cell>{it.quantity}</Table.Cell>
-                                        <Table.Cell>
-                                            {it.is_checked_out ? (
-                                                <Badge colorScheme="orange">Checked Out</Badge>
-                                            ) : (
-                                                <Badge colorScheme="green">Available</Badge>
-                                            )}
-                                        </Table.Cell>
-                                        <Table.Cell>{it.description ? <Text lineClamp={2}>{it.description}</Text> : '—'}</Table.Cell>
-                                        <Table.Cell>
-                                            <HStack gap={2}>
-                                                <Button 
-                                                    size="xs" 
-                                                    variant="outline" 
-                                                    onClick={(e) => { e.stopPropagation(); setEditing(it); addModal.onOpen(); }}
-                                                >
-                                                    Edit
-                                                </Button>
-                                                {it.is_checked_out ? (
-                                                    <Button 
-                                                        size="xs" 
-                                                        colorScheme="green" 
-                                                        onClick={(e) => { e.stopPropagation(); handleCheckin(it.id); }}
-                                                    >
-                                                        Check In
-                                                    </Button>
-                                                ) : (
-                                                    <Button 
-                                                        size="xs" 
-                                                        colorScheme="blue" 
-                                                        onClick={(e) => { e.stopPropagation(); handleCheckout(it.id); }}
-                                                    >
-                                                        Check Out
-                                                    </Button>
-                                                )}
-                                            </HStack>
-                                        </Table.Cell>
-                                    </Table.Row>
-                                ))}
-                            </Table.Body>
-                        </Table.Root>
+                        <ItemsTable
+                            items={items}
+                            totes={[]}
+                            onEdit={(item) => { setEditing(item); addModal.onOpen(); }}
+                            onCheckout={handleCheckout}
+                            onCheckin={handleCheckin}
+                            showToteColumn={false}
+                            showLocationColumn={false}
+                        />
                     )}
                 </>
             )}

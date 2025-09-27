@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listItems, listTotes, checkoutItem, checkinItem } from '../api'
 import type { ItemWithCheckoutStatus, Tote } from '../types'
-import { Box, HStack, Input, Button, Table, Text, Field, VStack, Combobox, Portal, createListCollection, Badge, Flex, Heading, Link } from '@chakra-ui/react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link } from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
+import ItemsTable from '../components/ItemsTable'
 
 
 export default function ItemsPage() {
@@ -11,7 +12,6 @@ export default function ItemsPage() {
     const [q, setQ] = useState('')
     const [sortKey, setSortKey] = useState<keyof ItemWithCheckoutStatus>('name')
     const [asc, setAsc] = useState(true)
-    const navigate = useNavigate()
 
     // Combobox collection for sort options
     const sortItems = useMemo(() => (
@@ -81,11 +81,7 @@ export default function ItemsPage() {
     }, [items, q, sortKey, asc])
 
 
-    function getToteForItem(it: ItemWithCheckoutStatus) {
-        if (it.tote_id) return totes.find(t => t.id === it.tote_id)
-        // fallback to previous (slower) method if tote_id absent
-        return totes.find(t => t.items.some(x => x.id === it.id))
-    }
+
 
 
     return (
@@ -142,75 +138,14 @@ export default function ItemsPage() {
                     </Box>
                 </Flex>
             ) : (
-                <Table.ScrollArea>
-                    <Table.Root size="sm" variant="line">
-                        <Table.Header>
-                            <Table.Row>
-                                <Table.ColumnHeader>Item</Table.ColumnHeader>
-                            <Table.ColumnHeader textAlign="end">Qty</Table.ColumnHeader>
-                            <Table.ColumnHeader>Status</Table.ColumnHeader>
-                            <Table.ColumnHeader>Tote UUID</Table.ColumnHeader>
-                            <Table.ColumnHeader>Tote Name</Table.ColumnHeader>
-                            <Table.ColumnHeader>Tote Location</Table.ColumnHeader>
-                            <Table.ColumnHeader>Actions</Table.ColumnHeader>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {filtered.map(i => {
-                            const tote = getToteForItem(i)
-                            return (
-                                <Table.Row key={i.id}>
-                                    <Table.Cell>
-                                        <Text fontWeight="semibold">{i.name}</Text>
-                                        {i.description && <Text color="gray.600" lineClamp={1} textWrap="wrap">{i.description}</Text>}
-                                    </Table.Cell>
-                                    <Table.Cell textAlign="end">{i.quantity}</Table.Cell>
-                                    <Table.Cell>
-                                        {i.is_checked_out ? (
-                                            <Badge colorScheme="orange">Checked Out</Badge>
-                                        ) : (
-                                            <Badge colorScheme="green">Available</Badge>
-                                        )}
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        {tote ? (
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                color="cyan.500"
-                                                onClick={() => navigate(`/totes/${tote.id}`)}
-                                            >
-                                                {tote.id.slice(-6)}
-                                            </Button>
-                                        ) : '—'}
-                                    </Table.Cell>
-                                    <Table.Cell>{tote?.name ?? '—'}</Table.Cell>
-                                    <Table.Cell>{tote?.location}</Table.Cell>
-                                    <Table.Cell>
-                                        {i.is_checked_out ? (
-                                            <Button 
-                                                size="sm" 
-                                                colorScheme="green" 
-                                                onClick={() => handleCheckin(i.id)}
-                                            >
-                                                Check In
-                                            </Button>
-                                        ) : (
-                                            <Button 
-                                                size="sm" 
-                                                colorScheme="blue" 
-                                                onClick={() => handleCheckout(i.id)}
-                                            >
-                                                Check Out
-                                            </Button>
-                                        )}
-                                    </Table.Cell>
-                                </Table.Row>
-                            )
-                        })}
-                    </Table.Body>
-                </Table.Root>
-            </Table.ScrollArea>
+                <ItemsTable
+                    items={filtered}
+                    totes={totes}
+                    onCheckout={handleCheckout}
+                    onCheckin={handleCheckin}
+                    showToteColumn={true}
+                    showLocationColumn={true}
+                />
             )}
         </Box>
     )
