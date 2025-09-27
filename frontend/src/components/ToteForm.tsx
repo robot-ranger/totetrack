@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { createTote, updateTote } from '../api'
-import type { Tote } from '../types'
-import { Button, Grid, GridItem, Input, Textarea, Box } from '@chakra-ui/react'
+import { useState, useEffect } from 'react'
+import { createTote, updateTote, listLocations } from '../api'
+import type { Tote, Location } from '../types'
+import { Button, Grid, GridItem, Input, Textarea, Box, Combobox, Portal, createListCollection } from '@chakra-ui/react'
 
 
 interface ToteFormProps {
@@ -12,13 +12,28 @@ interface ToteFormProps {
 
 export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormProps) {
     const [name, setName] = useState(existing?.name || '')
-    const [location, setLocation] = useState(existing?.location || '')
+    const [locationId, setLocationId] = useState<string[]>(existing?.location_id ? [existing.location_id] : [])
     const [metadata_json, setMeta] = useState(existing?.metadata_json || '')
     const [description, setDesc] = useState(existing?.description || '')
+    const [locations, setLocations] = useState<Location[]>([])
     const [busy, setBusy] = useState(false)
     // TODO: Integrate new toast API (createToaster) after setup. For now use console.
     const toast = (opts: { title: string }) => { console.log(opts.title) }
 
+    // Temporary: alias to relax overly-strict TS props on Combobox subcomponents in this project setup
+    const Cbx = Combobox as any
+
+    useEffect(() => {
+        async function loadLocations() {
+            try {
+                const locationsList = await listLocations()
+                setLocations(locationsList)
+            } catch (error) {
+                console.error('Error loading locations:', error)
+            }
+        }
+        loadLocations()
+    }, [])
 
     const isEdit = !!existing
 
@@ -26,14 +41,25 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
         e.preventDefault()
         setBusy(true)
         try {
+            const selectedLocationId = locationId.length > 0 ? locationId[0] : null
             if (isEdit && existing) {
-                const upd = await updateTote(existing.id, { name, location, metadata_json, description })
+                const upd = await updateTote(existing.id, { 
+                    name, 
+                    location_id: selectedLocationId, 
+                    metadata_json, 
+                    description 
+                })
                 onUpdated?.(upd)
                 toast({ title: 'Tote updated' })
             } else {
-                const created = await createTote({ name, location, metadata_json, description })
+                const created = await createTote({ 
+                    name, 
+                    location_id: selectedLocationId, 
+                    metadata_json, 
+                    description 
+                })
                 onCreated?.(created)
-                setName(''); setLocation(''); setMeta(''); setDesc('')
+                setName(''); setLocationId([]); setMeta(''); setDesc('')
                 toast({ title: 'Tote added' })
             }
         } finally {
@@ -54,7 +80,41 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
                 <GridItem>
                     <Box display="grid" gap={1}>
                         <Box as="label" fontSize="sm" fontWeight="medium">Storage location</Box>
-                        <Input value={location} onChange={e => setLocation(e.target.value)} />
+                        <Cbx.Root
+                            collection={createListCollection({
+                                items: locations.map(location => ({
+                                    label: location.name,
+                                    value: location.id
+                                }))
+                            })}
+                            value={locationId}
+                            onValueChange={(details: any) => setLocationId(details.value)}
+                            selectionBehavior="replace"
+                        >
+                            <Cbx.Control>
+                                <Cbx.Input />
+                                <Cbx.IndicatorGroup>
+                                    <Cbx.ClearTrigger />
+                                    <Cbx.Trigger />
+                                </Cbx.IndicatorGroup>
+                            </Cbx.Control>
+                            <Portal>
+                                <Cbx.Positioner>
+                                    <Cbx.Content>
+                                        <Cbx.Empty>No locations found</Cbx.Empty>
+                                        {locations.map((location) => (
+                                            <Cbx.Item 
+                                                key={location.id} 
+                                                item={{ label: location.name, value: location.id }}
+                                            >
+                                                {location.name}
+                                                <Cbx.ItemIndicator />
+                                            </Cbx.Item>
+                                        ))}
+                                    </Cbx.Content>
+                                </Cbx.Positioner>
+                            </Portal>
+                        </Cbx.Root>
                     </Box>
                 </GridItem>
                 <GridItem colSpan={2}>

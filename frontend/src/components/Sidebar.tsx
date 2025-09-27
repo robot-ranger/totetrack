@@ -1,6 +1,7 @@
 import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator } from '@chakra-ui/react'
 import { NavLink } from 'react-router-dom'
-import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser } from 'react-icons/fi'
+import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin } from 'react-icons/fi'
+import { LuPackageMinus } from 'react-icons/lu'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
 
@@ -23,8 +24,10 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
   const btnRef = useRef<HTMLButtonElement | null>(null)
 
   const links = [
+    { to: '/locations', label: 'Locations', icon: FiMapPin },
     { to: '/', label: 'Totes', icon: FiArchive },
     { to: '/items', label: 'Items', icon: FiTag },
+    { to: '/checked-out', label: 'Checked Out', icon: LuPackageMinus },
   ]
   if (user?.is_superuser) {
     links.push({ to: '/users', label: 'Users', icon: FiUsers })
@@ -48,53 +51,72 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
     if (!isMobile) onWidthChange?.(collapsed ? COLLAPSED_WIDTH : width)
   }, [isMobile])
 
-  const content = (
-    <VStack align="stretch" gap={1} p={collapsed ? 2 : 4} role="navigation" aria-label="Main" fontSize="sm" flex={1}>
-      {/* Collapse / Expand toggle (desktop only) */}
-      {!isMobile && (
-        <HStack justify={collapsed ? 'center' : 'flex-end'} mb={2} px={collapsed ? 0 : 1}>
-          <IconButton
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            size="xs"
-            variant="subtle"
-            onClick={() => setCollapsed(c => !c)}
-          >
-            {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
-          </IconButton>
-        </HStack>
-      )}
-      {links.map(l => (
-        <NavLink key={l.to} to={l.to} title={l.label} style={({ isActive }) => ({ textDecoration: 'none' })}>
-          {({ isActive }) => (
-            <HStack
-              px={collapsed ? 0 : 3}
-              py={2}
-              rounded="md"
-              bg={isActive ? 'accent.subtle' : 'transparent'}
-              _hover={{ bg: 'bg.emphasized' }}
-              color={isActive ? 'accent' : 'fg'}
-              justify={collapsed ? 'center' : 'flex-start'}
+  // Create separate content for desktop and mobile
+  const createContent = (forceExpanded = false) => {
+    const isCollapsed = !forceExpanded && collapsed
+    return (
+      <VStack align="stretch" gap={1} p={isCollapsed ? 2 : 4} role="navigation" aria-label="Main" fontSize="sm" flex={1}>
+        {/* Collapse / Expand toggle (desktop only) */}
+        {!isMobile && !forceExpanded && (
+          <HStack justify={isCollapsed ? 'center' : 'flex-end'} mb={2} px={isCollapsed ? 0 : 1}>
+            <IconButton
+              aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              size="xs"
+              variant="subtle"
+              onClick={() => setCollapsed(c => !c)}
             >
-              <Icon as={l.icon} />
-              {!collapsed && <Text>{l.label}</Text>}
-            </HStack>
-          )}
-        </NavLink>
-      ))}
-    </VStack>
-  )
-
-  const footer = user && (
-    <Box p={collapsed ? 2 : 3} borderTopWidth="1px" fontSize="xs">
-      <VStack align="stretch" gap={2}>
-        {!collapsed && <Text fontWeight="medium" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name || user.email}</Text>}
-        <HStack gap={2} justify={collapsed ? 'center' : 'end'}>
-          {onProfile && !collapsed && <Button aria-label="Profile" px={2} size="xs" variant={collapsed ? 'ghost' : 'surface'} colorPalette={"yellow"} onClick={onProfile}>{/* icon fallback */}<FiUser /> My Profile</Button>}
-          <Button size="xs" variant={collapsed ? 'solid' : 'outline'} colorPalette="red" onClick={onLogout}><FiLogOut />{!collapsed && <Text ml={2}>Logout</Text>}</Button>
-        </HStack>
+              {isCollapsed ? <FiChevronRight /> : <FiChevronLeft />}
+            </IconButton>
+          </HStack>
+        )}
+        {links.map(l => (
+          <NavLink key={l.to} to={l.to} title={l.label} style={({ isActive }) => ({ textDecoration: 'none' })}>
+            {({ isActive }) => (
+              <HStack
+                px={isCollapsed ? 0 : 3}
+                py={2}
+                rounded="md"
+                bg={isActive ? 'accent.subtle' : 'transparent'}
+                _hover={{ bg: 'bg.emphasized' }}
+                color={isActive ? 'accent' : 'fg'}
+                justify={isCollapsed ? 'center' : 'flex-start'}
+              >
+                {(l as any).imageIcon ? (
+                  <Image src={(l as any).imageIcon} color='fg' alt={l.label} boxSize="16px" />
+                ) : l.icon ? (
+                  <Icon as={l.icon} />
+                ) : null}
+                {!isCollapsed && <Text>{l.label}</Text>}
+              </HStack>
+            )}
+          </NavLink>
+        ))}
       </VStack>
-    </Box>
-  )
+    )
+  }
+
+  const desktopContent = createContent(false)
+  const mobileContent = createContent(true) // Always expanded for mobile
+
+  // Create separate footer for desktop and mobile
+  const createFooter = (forceExpanded = false) => {
+    if (!user) return null
+    const isCollapsed = !forceExpanded && collapsed
+    return (
+      <Box p={isCollapsed ? 2 : 3} borderTopWidth="1px" fontSize="xs">
+        <VStack align="stretch" gap={2}>
+          {!isCollapsed && <Text fontWeight="medium" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name || user.email}</Text>}
+          <HStack gap={2} justify={isCollapsed ? 'center' : 'end'}>
+            {onProfile && !isCollapsed && <Button aria-label="Profile" px={2} size="xs" variant={isCollapsed ? 'ghost' : 'surface'} colorPalette={"yellow"} onClick={onProfile}>{/* icon fallback */}<FiUser /> My Profile</Button>}
+            <Button size="xs" variant={isCollapsed ? 'solid' : 'outline'} colorPalette="red" onClick={onLogout}><FiLogOut />{!isCollapsed && <Text ml={2}>Logout</Text>}</Button>
+          </HStack>
+        </VStack>
+      </Box>
+    )
+  }
+
+  const desktopFooter = createFooter(false)
+  const mobileFooter = createFooter(true) // Always expanded for mobile
 
   if (isMobile) {
     const D = Drawer as any
@@ -117,13 +139,13 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
             <D.Content maxW="240px" display="flex" flexDirection="column" maxH="100vh">
               <D.Header fontSize="md" px={4} py={3}>
                 <HStack justify="space-between" w="full">
-                  <HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack>
+                  <HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack>
                   <D.CloseTrigger asChild>
                     <IconButton aria-label="Close" size="xs" variant="ghost"><FiX /></IconButton>
                   </D.CloseTrigger>
                 </HStack>
               </D.Header>
-              <D.Body p={0} display="flex" flexDirection="column" overflowY="auto">{content}{footer}</D.Body>
+              <D.Body p={0} display="flex" flexDirection="column" overflowY="auto">{mobileContent}{mobileFooter}</D.Body>
             </D.Content>
           </D.Positioner>
         </D.Root>
@@ -146,8 +168,8 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
       display="flex"
       flexDirection="column"
     >
-      {content}
-      {footer}
+      {desktopContent}
+      {desktopFooter}
     </Box>
   )
 }

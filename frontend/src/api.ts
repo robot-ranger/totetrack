@@ -1,6 +1,6 @@
 // frontend/src/api.ts
 import axios from 'axios'
-import type { Tote, Item, User } from './types'
+import type { Tote, Item, User, Location, CheckedOutItem, ItemWithCheckoutStatus } from './types'
 
 // Allow overriding via Vite env; falls back to Vite dev proxy ("/api")
 const baseURL = import.meta.env.VITE_API_BASE ?? '/api'
@@ -60,10 +60,11 @@ export async function getTote(id: string): Promise<Tote> {
 }
 
 export async function createTote(payload: Partial<Tote>): Promise<Tote> {
-    // Backend expects: { name?, location?, metadata_json?, description? }
+    // Backend expects: { name?, location?, location_id?, metadata_json?, description? }
     const body = {
         name: payload.name ?? null,
         location: payload.location ?? null,
+        location_id: payload.location_id ?? null,
         metadata_json: payload.metadata_json ?? null,
         description: payload.description ?? null,
     }
@@ -79,10 +80,49 @@ export async function updateTote(id: string, payload: Partial<Tote>): Promise<To
     const body = {
         name: payload.name ?? null,
         location: payload.location ?? null,
+        location_id: payload.location_id ?? null,
         metadata_json: payload.metadata_json ?? null,
         description: payload.description ?? null,
     }
     const { data } = await http.put<Tote>(`/totes/${id}`, body)
+    return data
+}
+
+// ——— Locations ———
+export async function listLocations(): Promise<Location[]> {
+    const { data } = await http.get<Location[]>('/locations')
+    return data
+}
+
+export async function getLocation(id: string): Promise<Location> {
+    const { data } = await http.get<Location>(`/locations/${id}`)
+    return data
+}
+
+export async function createLocation(payload: { name: string; description?: string }): Promise<Location> {
+    const body = {
+        name: payload.name,
+        description: payload.description ?? null,
+    }
+    const { data } = await http.post<Location>('/locations', body)
+    return data
+}
+
+export async function deleteLocation(id: string): Promise<void> {
+    await http.delete(`/locations/${id}`)
+}
+
+export async function updateLocation(id: string, payload: { name?: string; description?: string }): Promise<Location> {
+    const body = {
+        name: payload.name ?? null,
+        description: payload.description ?? null,
+    }
+    const { data } = await http.put<Location>(`/locations/${id}`, body)
+    return data
+}
+
+export async function getLocationTotes(locationId: string): Promise<Tote[]> {
+    const { data } = await http.get<Tote[]>(`/locations/${locationId}/totes`)
     return data
 }
 
@@ -106,8 +146,8 @@ export async function addItem(toteId: string, form: AddItemForm): Promise<Item> 
     return data
 }
 
-export async function listItems(): Promise<Item[]> {
-    const { data } = await http.get<Item[]>('/items')
+export async function listItems(): Promise<ItemWithCheckoutStatus[]> {
+    const { data } = await http.get<ItemWithCheckoutStatus[]>('/items')
     return data
 }
 
@@ -190,4 +230,21 @@ export async function updateUser(userId: string, form: UpdateUserForm): Promise<
 
 export async function deleteUser(userId: string): Promise<void> {
     await http.delete(`/users/${userId}`)
+}
+
+// ——— Checkout functionality ———
+
+export async function checkoutItem(itemId: string): Promise<CheckedOutItem> {
+    const { data } = await http.post<CheckedOutItem>(`/items/${itemId}/checkout`)
+    return data
+}
+
+export async function checkinItem(itemId: string): Promise<{ message: string }> {
+    const { data } = await http.delete<{ message: string }>(`/items/${itemId}/checkin`)
+    return data
+}
+
+export async function fetchCheckedOutItems(): Promise<CheckedOutItem[]> {
+    const { data } = await http.get<CheckedOutItem[]>('/checked-out-items')
+    return data
 }

@@ -1,9 +1,53 @@
 from pathlib import Path
 from typing import BinaryIO
 from PIL import Image
+import re
+import unicodedata
 
 MEDIA_DIR = Path("media")
 MEDIA_DIR.mkdir(exist_ok=True)
+
+
+def sanitize_filename(name: str, max_length: int = 40) -> str:
+    """
+    Sanitize a string to be safe for use as a filename.
+    
+    This function:
+    1. Normalizes unicode characters
+    2. Removes or replaces unsafe characters
+    3. Handles edge cases like empty strings
+    4. Truncates to max_length while avoiding cutting unicode characters
+    """
+    if not name:
+        return "item"
+    
+    # Normalize unicode characters (decompose accented characters)
+    name = unicodedata.normalize('NFKD', name)
+    
+    # Remove any characters that aren't alphanumeric, spaces, hyphens, or underscores
+    # This eliminates problematic characters like / \ : * ? " < > |
+    name = re.sub(r'[^\w\s\-]', '', name)
+    
+    # Replace spaces and multiple whitespace with single underscores
+    name = re.sub(r'\s+', '_', name.strip())
+    
+    # Remove any leading/trailing underscores or hyphens
+    name = name.strip('_-')
+    
+    # If the name is empty after sanitization, use a default
+    if not name:
+        return "item"
+    
+    # Truncate to max_length, but try not to cut in the middle of a word
+    if len(name) > max_length:
+        truncated = name[:max_length]
+        # Try to cut at word boundary (underscore)
+        last_underscore = truncated.rfind('_')
+        if last_underscore > max_length // 2:  # Only if we don't cut too much
+            truncated = truncated[:last_underscore]
+        name = truncated.rstrip('_-')
+    
+    return name or "item"
 
 
 def save_image(file: BinaryIO, dest_name: str) -> str:

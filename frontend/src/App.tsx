@@ -1,24 +1,36 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
-import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton, Menu, MenuContent, MenuTrigger, Portal } from '@chakra-ui/react'
+import { useState } from 'react'
+import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton } from '@chakra-ui/react'
 import { useColorMode } from './components/ui/color-mode'
 import TotesPage from './pages/TotesPage'
 import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import UsersPage from './pages/UsersPage'
-import { FiArchive, FiDownloadCloud, FiMoon, FiSun, FiTag, FiUsers, FiLogOut } from 'react-icons/fi'
+import LocationsPage from './pages/LocationsPage'
+import CheckedOutItemsPage from './pages/CheckedOutItemsPage'
+import { FiDownloadCloud, FiMoon, FiSun, FiMenu, FiUser, FiSettings } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
 import { listItems } from './api'
-import type { Item } from './types'
+import type { ItemWithCheckoutStatus } from './types'
 import { useAuth } from './auth'
+import { Sidebar } from './components/Sidebar'
+import { ProfileModal } from './components/ProfileModal'
 import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
+import LandingPage from './pages/LandingPage'
 
+const sidebarWidth = 220
 
 export default function App() {
     const { colorMode, toggleColorMode } = useColorMode()
     const { user, logout } = useAuth()
+    // Track actual sidebar width (collapsible on desktop)
+    const [sidebarCurrentWidth, setSidebarCurrentWidth] = useState<number>(sidebarWidth)
+    // Profile and nav state for authenticated users (always declare hooks)
+    const [profileOpen, setProfileOpen] = useState(false)
+    const [navOpen, setNavOpen] = useState(false)
 
-    function toCsv(items: Item[]): string {
+    function toCsv(items: ItemWithCheckoutStatus[]): string {
         const headers = ['id', 'name', 'description', 'quantity', 'tote_id', 'image_url'] as const
         const escape = (val: unknown) => {
             if (val === null || val === undefined) return ''
@@ -59,45 +71,65 @@ export default function App() {
     // Public routes
     if (!user) {
         return (
-            <Container maxW="6xl" py={6}>
-                <HStack gap={6} mb={6}>
-                    <NavLink to='/'><HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="ToteTrack" w={30}/><Heading size="lg">ToteTrack</Heading></HStack></NavLink>
-                    <Spacer />
-                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
-                </HStack>
+            <Box>
+                <Container maxW="6xl" py={6}>
+                    <HStack gap={6} mb={4}>
+                        <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="ToteTrackr" w={30}/><Heading size="lg">ToteTrackr</Heading></HStack></NavLink>
+                        <Spacer />
+                        <HStack gap={3}>
+                            <Button size="sm" variant="solid" colorPalette="yellow" asChild><NavLink to="/login">Login</NavLink></Button>
+                            <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                        </HStack>
+                    </HStack>
+                </Container>
                 <Routes>
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/recover" element={<PasswordRecoveryPage />} />
-                    <Route path="*" element={<Navigate to="/login" replace />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
-            </Container>
+            </Box>
         )
     }
 
     // Authenticated routes
     return (
-        <Container maxW="6xl" py={6}>
-            <HStack gap={6} mb={6}>
-                <NavLink to='/'><HStack><Image src={"/media/totetrack-icon_light_30.png"} alt="Boxly" w={30}/><Heading size="lg">ToteTrack</Heading></HStack></NavLink>
-                <Spacer />
-                <RouterLink to="/"><HStack><Icon size={'sm'}><FiArchive/></Icon>Totes</HStack></RouterLink>
-                <RouterLink to="/items"><HStack><Icon size={'sm'}><FiTag/></Icon>Items</HStack></RouterLink>
-                {user.is_superuser && (
-                    <RouterLink to="/users"><HStack><Icon size={'sm'}><FiUsers/></Icon>Users</HStack></RouterLink>
-                )}
-                <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
-                <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
-                <Button size="sm" variant="outline" onClick={() => { logout(); }}>
-                    <HStack><Icon size={'sm'}><FiLogOut /></Icon>Logout</HStack>
-                </Button>
-            </HStack>
-            <Routes>
-                <Route path="/" element={<TotesPage />} />
-                <Route path="/items" element={<ItemsPage />} />
-                <Route path="/users" element={<UsersPage />} />
-                <Route path="/totes/:toteId" element={<ToteDetailPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Container>
+        <Box display="flex" minH="100vh">
+            <Sidebar
+                width={sidebarWidth}
+                mobileOpen={navOpen}
+                onMobileOpenChange={setNavOpen}
+                hideHamburger
+                onProfile={() => setProfileOpen(true)}
+                onLogout={logout}
+                onWidthChange={setSidebarCurrentWidth}
+            />
+            <Box flex="1" ml={{ base: 0, md: `${sidebarCurrentWidth}px` }} px={4} py={4}>
+                <HStack mb={4} gap={4}>
+                    <HStack gap={3}>
+                        <IconButton display={{ base: 'inline-flex', md: 'none' }} aria-label="Open navigation" variant="ghost" size="sm" onClick={() => setNavOpen(true)}>
+                            <FiMenu />
+                        </IconButton>
+                        <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
+                    </HStack>
+                    <Spacer />
+                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                    <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
+                    <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
+                        <Icon size={'sm'}><FiSettings /></Icon>
+                    </Button>
+                </HStack>
+                <Routes>
+                    <Route path="/" element={<TotesPage />} />
+                    <Route path="/items" element={<ItemsPage />} />
+                    <Route path="/checked-out" element={<CheckedOutItemsPage />} />
+                    <Route path="/locations" element={<LocationsPage />} />
+                    <Route path="/users" element={<UsersPage />} />
+                    <Route path="/totes/:toteId" element={<ToteDetailPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+                <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={logout} />
+            </Box>
+        </Box>
     )
 }

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer } from '@chakra-ui/react'
+import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer, Link, Badge, HStack } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
-import { getTote, itemsInTote, deleteTote } from '../api'
-import type { Tote, Item } from '../types'
+import { getTote, itemsInTote, deleteTote, checkoutItem, checkinItem, listItems } from '../api'
+import type { Tote, Item, ItemWithCheckoutStatus } from '../types'
 import ItemForm from './ItemForm'
 import ToteForm from './ToteForm'
 import QRLabel from './QRLabel'
@@ -18,7 +18,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
     // Temporary alias to relax Menu subcomponent typings in this project setup
     const M = Menu as any
     const [tote, setTote] = useState<Tote | null>(null)
-    const [items, setItems] = useState<Item[]>([])
+    const [items, setItems] = useState<ItemWithCheckoutStatus[]>([])
     const addModal = useSimpleDisclosure()
     const editToteModal = useSimpleDisclosure()
     const delDialog = useSimpleDisclosure()
@@ -26,10 +26,35 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
 
     async function load() {
         if (!toteId) return
-        const t = await getTote(toteId)
-        setTote(t)
-        const its = await itemsInTote(toteId)
-        setItems(its)
+        try {
+            const [t, allItems] = await Promise.all([getTote(toteId), listItems()])
+            setTote(t)
+            // Filter items for this tote from the global items list (which includes checkout status)
+            const toteItems = allItems.filter(item => item.tote_id === toteId)
+            setItems(toteItems)
+        } catch (err) {
+            console.error('Failed to load tote data:', err)
+        }
+    }
+
+    const handleCheckout = async (itemId: string) => {
+        try {
+            await checkoutItem(itemId)
+            console.log('Item checked out successfully')
+            load() // Refresh data
+        } catch (err) {
+            console.error('Failed to checkout item:', err)
+        }
+    }
+
+    const handleCheckin = async (itemId: string) => {
+        try {
+            await checkinItem(itemId)
+            console.log('Item checked in successfully')
+            load() // Refresh data
+        } catch (err) {
+            console.error('Failed to checkin item:', err)
+        }
     }
 
     useEffect(() => { load() }, [toteId])
@@ -49,6 +74,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                 <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editToteModal.onOpen}>Edit Tote</Button>
                                 <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Tote</Button>
                             </Flex>
+                            <Text color={'fg.subtle'}>Location: {tote.location_obj?<Link variant="underline" color="cyan.500">{tote.location_obj?.name}</Link>: 'Unassigned'}</Text>
                         </VStack>
                         <VStack align={'end'}>
                             {inList && (
@@ -77,16 +103,53 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                     <Table.ColumnHeader w="110px">Photo</Table.ColumnHeader>
                                     <Table.ColumnHeader>Name</Table.ColumnHeader>
                                     <Table.ColumnHeader w="80px">Qty</Table.ColumnHeader>
+                                    <Table.ColumnHeader w="120px">Status</Table.ColumnHeader>
                                     <Table.ColumnHeader>Description</Table.ColumnHeader>
+                                    <Table.ColumnHeader w="150px">Actions</Table.ColumnHeader>
                                 </Table.Row>
                             </Table.Header>
                             <Table.Body>
                                 {items.map(it => (
-                                    <Table.Row key={it.id} _hover={{ bg: 'bg.muted', cursor: 'pointer' }} onClick={() => { setEditing(it); addModal.onOpen(); }}>
+                                    <Table.Row key={it.id} _hover={{ bg: 'bg.muted' }}>
                                         <Table.Cell>{it.image_url && <Image src={it.image_url} alt={it.name} boxSize="60px" objectFit="cover" borderRadius="md" />}</Table.Cell>
                                         <Table.Cell>{it.name}</Table.Cell>
                                         <Table.Cell>{it.quantity}</Table.Cell>
+                                        <Table.Cell>
+                                            {it.is_checked_out ? (
+                                                <Badge colorScheme="orange">Checked Out</Badge>
+                                            ) : (
+                                                <Badge colorScheme="green">Available</Badge>
+                                            )}
+                                        </Table.Cell>
                                         <Table.Cell>{it.description ? <Text lineClamp={2}>{it.description}</Text> : '—'}</Table.Cell>
+                                        <Table.Cell>
+                                            <HStack gap={2}>
+                                                <Button 
+                                                    size="xs" 
+                                                    variant="outline" 
+                                                    onClick={(e) => { e.stopPropagation(); setEditing(it); addModal.onOpen(); }}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                {it.is_checked_out ? (
+                                                    <Button 
+                                                        size="xs" 
+                                                        colorScheme="green" 
+                                                        onClick={(e) => { e.stopPropagation(); handleCheckin(it.id); }}
+                                                    >
+                                                        Check In
+                                                    </Button>
+                                                ) : (
+                                                    <Button 
+                                                        size="xs" 
+                                                        colorScheme="blue" 
+                                                        onClick={(e) => { e.stopPropagation(); handleCheckout(it.id); }}
+                                                    >
+                                                        Check Out
+                                                    </Button>
+                                                )}
+                                            </HStack>
+                                        </Table.Cell>
                                     </Table.Row>
                                 ))}
                             </Table.Body>
@@ -119,13 +182,13 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                             <ItemForm
                                 toteId={tote.id}
                                 existing={editing}
-                                onCreated={(i) => { setItems(prev => [i, ...prev]); addModal.onClose(); }}
-                                onUpdated={(i) => {
-                                    setItems(prev => prev.map(p => p.id === i.id ? i : p));
-                                    setEditing(i);
+                                onCreated={() => { load(); addModal.onClose(); }}
+                                onUpdated={() => {
+                                    load();
+                                    setEditing(null);
                                 }}
-                                onDeleted={(id) => {
-                                    setItems(prev => prev.filter(p => p.id !== id));
+                                onDeleted={() => {
+                                    load();
                                     addModal.onClose();
                                     setEditing(null);
                                 }}

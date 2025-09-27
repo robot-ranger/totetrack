@@ -14,6 +14,7 @@ def create_tote(db: Session, tote: schemas.ToteCreate, user_id: str) -> models.T
         user_id=user_id,
         name=tote.name,
         location=tote.location,
+        location_id=tote.location_id,
         metadata_json=tote.metadata_json,
         description=tote.description,
     )
@@ -23,7 +24,9 @@ def create_tote(db: Session, tote: schemas.ToteCreate, user_id: str) -> models.T
     return m
 
 
-def list_totes(db: Session, user_id: str):
+def list_totes(db: Session, user_id: str = None):
+    if user_id is None:
+        return db.query(models.Tote).all()
     return db.query(models.Tote).filter(models.Tote.user_id == user_id).all()
 
 
@@ -33,6 +36,11 @@ def get_tote(db: Session, tote_id: str, user_id: str):
         .filter(models.Tote.id == tote_id, models.Tote.user_id == user_id)
         .first()
     )
+
+
+def get_tote_by_id(db: Session, tote_id: str):
+    """Get tote by ID without user restriction - for read-only access"""
+    return db.query(models.Tote).filter(models.Tote.id == tote_id).first()
 
 
 def delete_tote(db: Session, tote: models.Tote):
@@ -45,6 +53,8 @@ def update_tote(db: Session, tote: models.Tote, upd: schemas.ToteUpdate):
         tote.name = upd.name
     if upd.location is not None:
         tote.location = upd.location
+    if upd.location_id is not None:
+        tote.location_id = upd.location_id
     if upd.metadata_json is not None:
         tote.metadata_json = upd.metadata_json
     if upd.description is not None:
@@ -53,6 +63,58 @@ def update_tote(db: Session, tote: models.Tote, upd: schemas.ToteUpdate):
     db.commit()
     db.refresh(tote)
     return tote
+
+# Locations
+
+
+def create_location(db: Session, location: schemas.LocationCreate, user_id: str) -> models.Location:
+    m = models.Location(
+        user_id=user_id,
+        name=location.name,
+        description=location.description,
+    )
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return m
+
+
+def list_locations(db: Session, user_id: str = None):
+    if user_id is None:
+        return db.query(models.Location).all()
+    return db.query(models.Location).filter(models.Location.user_id == user_id).all()
+
+
+def get_location(db: Session, location_id: str, user_id: str):
+    return (
+        db.query(models.Location)
+        .filter(models.Location.id == location_id, models.Location.user_id == user_id)
+        .first()
+    )
+
+
+def get_location_by_id(db: Session, location_id: str):
+    """Get location by ID without user restriction - for read-only access"""
+    return db.query(models.Location).filter(models.Location.id == location_id).first()
+
+
+def delete_location(db: Session, location: models.Location):
+    # Remove location association from totes that reference this location
+    db.query(models.Tote).filter(models.Tote.location_id == location.id).update({"location_id": None})
+    db.delete(location)
+    db.commit()
+
+
+def update_location(db: Session, location: models.Location, upd: schemas.LocationUpdate):
+    if upd.name is not None:
+        location.name = upd.name
+    if upd.description is not None:
+        location.description = upd.description
+    db.add(location)
+    db.commit()
+    db.refresh(location)
+    return location
+
 
 # Items
 
@@ -81,6 +143,11 @@ def list_items(db: Session, user_id: str):
     )
 
 
+def list_all_items(db: Session):
+    """List all items without user filtering - for read-only access"""
+    return db.query(models.Item).all()
+
+
 def list_items_in_tote(db: Session, tote_id: str, user_id: str):
     return (
         db.query(models.Item)
@@ -88,6 +155,11 @@ def list_items_in_tote(db: Session, tote_id: str, user_id: str):
         .filter(models.Item.tote_id == tote_id, models.Tote.user_id == user_id)
         .all()
     )
+
+
+def list_items_in_tote_by_id(db: Session, tote_id: str):
+    """List items in a tote without user filtering - for read-only access"""
+    return db.query(models.Item).filter(models.Item.tote_id == tote_id).all()
 
 
 def get_item(db: Session, item_id: str, user_id: str):
@@ -219,3 +291,75 @@ def consume_reset_token(db: Session, token: str, new_password: str):
             update_user_password(db, user, new_password)
             return user
     return None
+
+
+# Checkout functionality
+
+def checkout_item(db: Session, item_id: str, user_id: str) -> models.CheckedOutItem | None:
+    """Check out an item to a user. Returns None if item is already checked out or doesn't exist."""
+    # First verify the item exists and belongs to the user
+    item = get_item(db, item_id, user_id)
+    if not item:
+        return None
+
+    # Check if already checked out
+    existing_checkout = (
+        db.query(models.CheckedOutItem)
+        .filter(models.CheckedOutItem.item_id == item_id)
+        .first()
+    )
+    if existing_checkout:
+        return None  # Already checked out
+
+    # Create checkout record
+    checkout = models.CheckedOutItem(
+        item_id=item_id,
+        user_id=user_id,
+        checked_out_at=datetime.utcnow()
+    )
+    db.add(checkout)
+    db.commit()
+    db.refresh(checkout)
+    return checkout
+
+
+def checkin_item(db: Session, item_id: str, user_id: str) -> bool:
+    """Check in an item. Returns True if successful, False if not checked out or not owned by user."""
+    # Verify the item belongs to the user
+    item = get_item(db, item_id, user_id)
+    if not item:
+        return False
+
+    # Find and delete the checkout record
+    checkout = (
+        db.query(models.CheckedOutItem)
+        .filter(models.CheckedOutItem.item_id == item_id)
+        .first()
+    )
+    if not checkout:
+        return False  # Not checked out
+
+    db.delete(checkout)
+    db.commit()
+    return True
+
+
+def get_checked_out_items(db: Session, user_id: str) -> list[models.CheckedOutItem]:
+    """Get all items checked out by or owned by a user."""
+    return (
+        db.query(models.CheckedOutItem)
+        .join(models.Item, models.CheckedOutItem.item_id == models.Item.id)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Tote.user_id == user_id)
+        .all()
+    )
+
+
+def get_item_with_checkout_status(db: Session, item_id: str, user_id: str) -> models.Item | None:
+    """Get an item with its checkout information."""
+    return (
+        db.query(models.Item)
+        .join(models.Tote, models.Item.tote_id == models.Tote.id)
+        .filter(models.Item.id == item_id, models.Tote.user_id == user_id)
+        .first()
+    )
