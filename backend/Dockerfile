@@ -20,11 +20,11 @@ RUN pip install --upgrade pip \
 
 # Copy app source
 COPY backend/app /app/app
-COPY backend/media /app/media
 
 # Create non-root user
 RUN useradd -ms /bin/bash appuser \
-    && chown -R appuser:appuser /app
+    && chown -R appuser:appuser /app \
+    && mkdir /app/media
 
 USER appuser
 
