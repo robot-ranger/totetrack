@@ -77,10 +77,8 @@ export default function CheckedOutItemsPage() {
             )}
 
             {checkedOutItems.length === 0 ? (
-                <Box textAlign="center" py={8}>
-                    <Text fontSize="lg" color="gray.500">
-                        No items are currently checked out
-                    </Text>
+                <Box textAlign="center" py={8} color="fg.subtle">
+                    No items are currently checked out
                 </Box>
             ) : (
                 <Table.Root>

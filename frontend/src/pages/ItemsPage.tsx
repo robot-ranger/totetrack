@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listItems, listTotes, checkoutItem, checkinItem } from '../api'
 import type { ItemWithCheckoutStatus, Tote } from '../types'
-import { Box, HStack, Input, Button, Table, Text, Field, VStack, Combobox, Portal, createListCollection, Badge } from '@chakra-ui/react'
+import { Box, HStack, Input, Button, Table, Text, Field, VStack, Combobox, Portal, createListCollection, Badge, Flex, Heading, Link } from '@chakra-ui/react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 
 
@@ -131,12 +131,19 @@ export default function ItemsPage() {
                 </VStack>
             </HStack>
 
-
-            <Table.ScrollArea>
-                <Table.Root size="sm" variant="line">
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.ColumnHeader>Item</Table.ColumnHeader>
+            {filtered.length === 0 ? (
+                <Flex align="center" justify="center" p={4}>
+                    <Box textAlign="center">
+                        <Heading>No items found.</Heading>
+                        {items.length === 0 && <Box color={"fg.subtle"}>Add items to a <Link color='cyan.500' href="/totes">tote</Link> to get started.</Box>}
+                    </Box>
+                </Flex>
+            ) : (
+                <Table.ScrollArea>
+                    <Table.Root size="sm" variant="line">
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.ColumnHeader>Item</Table.ColumnHeader>
                             <Table.ColumnHeader textAlign="end">Qty</Table.ColumnHeader>
                             <Table.ColumnHeader>Status</Table.ColumnHeader>
                             <Table.ColumnHeader>Tote UUID</Table.ColumnHeader>
@@ -201,7 +208,7 @@ export default function ItemsPage() {
                     </Table.Body>
                 </Table.Root>
             </Table.ScrollArea>
-            {filtered.length === 0 && <Text>No items found.</Text>}
+            )}
         </Box>
     )
 }

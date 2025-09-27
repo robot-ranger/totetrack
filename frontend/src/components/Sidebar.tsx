@@ -1,9 +1,10 @@
-import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator } from '@chakra-ui/react'
+import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator, Badge } from '@chakra-ui/react'
 import { NavLink } from 'react-router-dom'
 import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin } from 'react-icons/fi'
 import { LuPackageMinus } from 'react-icons/lu'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
+import { listLocations, listTotes, listItems, fetchCheckedOutItems, listUsers } from '../api'
 
 /**
  * Sidebar navigation shown for authenticated users.
@@ -23,14 +24,54 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
   }
   const btnRef = useRef<HTMLButtonElement | null>(null)
 
+  // State for counts
+  const [counts, setCounts] = useState({
+    locations: 0,
+    totes: 0,
+    items: 0,
+    checkedOut: 0,
+    users: 0,
+  })
+
+  // Fetch counts
+  const fetchCounts = async () => {
+    try {
+      const [locationsList, totesList, itemsList, checkedOutList, usersList] = await Promise.all([
+        listLocations(),
+        listTotes(),
+        listItems(),
+        fetchCheckedOutItems(),
+        user?.is_superuser ? listUsers() : Promise.resolve([]),
+      ])
+
+      setCounts({
+        locations: locationsList.length,
+        totes: totesList.length,
+        items: itemsList.length,
+        checkedOut: checkedOutList.length,
+        users: usersList.length,
+      })
+    } catch (error) {
+      console.error('Error fetching counts:', error)
+      // Keep counts at 0 if there's an error
+    }
+  }
+
+  // Fetch counts on mount and when user changes
+  useEffect(() => {
+    if (user) {
+      fetchCounts()
+    }
+  }, [user])
+
   const links = [
-    { to: '/locations', label: 'Locations', icon: FiMapPin },
-    { to: '/', label: 'Totes', icon: FiArchive },
-    { to: '/items', label: 'Items', icon: FiTag },
-    { to: '/checked-out', label: 'Checked Out', icon: LuPackageMinus },
+    { to: '/locations', label: 'Locations', icon: FiMapPin, count: counts.locations },
+    { to: '/', label: 'Totes', icon: FiArchive, count: counts.totes },
+    { to: '/items', label: 'Items', icon: FiTag, count: counts.items },
+    { to: '/checked-out', label: 'Checked Out', icon: LuPackageMinus, count: counts.checkedOut },
   ]
   if (user?.is_superuser) {
-    links.push({ to: '/users', label: 'Users', icon: FiUsers })
+    links.push({ to: '/users', label: 'Users', icon: FiUsers, count: counts.users })
   }
 
   // Collapsible (desktop only)
@@ -80,13 +121,45 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
                 _hover={{ bg: 'bg.emphasized' }}
                 color={isActive ? 'accent' : 'fg'}
                 justify={isCollapsed ? 'center' : 'flex-start'}
+                position="relative"
               >
-                {(l as any).imageIcon ? (
-                  <Image src={(l as any).imageIcon} color='fg' alt={l.label} boxSize="16px" />
-                ) : l.icon ? (
-                  <Icon as={l.icon} />
-                ) : null}
-                {!isCollapsed && <Text>{l.label}</Text>}
+                {isCollapsed ? (
+                  <Box position="relative">
+                    {(l as any).imageIcon ? (
+                      <Image src={(l as any).imageIcon} color='fg' alt={l.label} boxSize="16px" />
+                    ) : l.icon ? (
+                      <Icon as={l.icon} />
+                    ) : null}
+                    <Badge
+                      position="absolute"
+                      top="-8px"
+                      right="-8px"
+                      size="sm"
+                      variant="solid"
+                      colorPalette="blue"
+                      fontSize="xs"
+                      minW="16px"
+                      h="16px"
+                      borderRadius="full"
+                    >
+                      {l.count}
+                    </Badge>
+                  </Box>
+                ) : (
+                  <>
+                    {(l as any).imageIcon ? (
+                      <Image src={(l as any).imageIcon} color='fg' alt={l.label} boxSize="16px" />
+                    ) : l.icon ? (
+                      <Icon as={l.icon} />
+                    ) : null}
+                    <HStack flex={1} justify="space-between">
+                      <Text>{l.label}</Text>
+                      <Badge variant="subtle" size="sm" colorPalette="gray">
+                        {l.count}
+                      </Badge>
+                    </HStack>
+                  </>
+                )}
               </HStack>
             )}
           </NavLink>

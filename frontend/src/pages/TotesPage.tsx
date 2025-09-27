@@ -4,7 +4,7 @@ import type { Tote } from '../types'
 import ToteForm from '../components/ToteForm'
 import ToteTable from '../components/ToteTable'
 import ItemsPage from './ItemsPage'
-import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, Spacer, SegmentGroup, VStack } from '@chakra-ui/react'
+import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, Spacer, SegmentGroup, VStack, Flex, Link } from '@chakra-ui/react'
 import { FiX } from 'react-icons/fi'
 
 
@@ -55,7 +55,15 @@ export default function TotesPage() {
                 <Input placeholder="Search by name or UUID…" value={q} onChange={e => setQ(e.target.value)}/>
                 <Button colorPalette="yellow" onClick={onOpen}>Add Tote</Button>
             </HStack>
-            <ToteTable totes={filtered} />
+            {filtered?.length === 0 ? (
+                            <Flex align="center" justify="center" p={4}>
+                                <Box textAlign="center">
+                                    <Heading>No totes found.</Heading>
+                                    {totes.length === 0 && <Box color={"fg.subtle"}>Add your first tote to get started.</Box>}
+                                </Box>
+                            </Flex>
+                        ) : (
+            <ToteTable totes={filtered} />)}
         </Stack>
     )
 }

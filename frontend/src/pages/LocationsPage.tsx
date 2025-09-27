@@ -3,7 +3,7 @@ import { listLocations, deleteLocation, listTotes } from '../api'
 import type { Location, Tote } from '../types'
 import LocationForm from '../components/LocationForm'
 import LocationTable from '../components/LocationTable'
-import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, IconButton } from '@chakra-ui/react'
+import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, IconButton, Flex } from '@chakra-ui/react'
 import { FiX, FiTrash2 } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 
@@ -135,13 +135,21 @@ export default function LocationsPage() {
                 />
                 <Button colorPalette="blue" onClick={onOpen}>Add Location</Button>
             </HStack>
-            
-            <LocationTable 
-                locations={filtered} 
-                totes={totes}
-                onToteClick={handleToteClick}
-                onEditLocation={openEditModal}
-            />
+            {locations.length === 0 ? (
+                <Flex align="center" justify="center" p={4}>
+                    <Box textAlign="center">
+                        <Heading mb={2}>No locations found.</Heading>
+                        <Box color={"fg.subtle"}>Add your first location by clicking the "Add Location" button.</Box>
+                    </Box>
+                </Flex>
+            ) : (
+                <LocationTable 
+                    locations={filtered} 
+                    totes={totes}
+                    onToteClick={handleToteClick}
+                    onEditLocation={openEditModal}
+                />
+            )}
         </Stack>
     )
 }
