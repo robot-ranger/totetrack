@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer } from '@chakra-ui/react'
+import { Box, Button, Heading, Separator, Text, Table, Image, VStack, Flex, IconButton, Menu, Portal, Spacer, Link } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { getTote, itemsInTote, deleteTote } from '../api'
 import type { Tote, Item } from '../types'
@@ -49,6 +49,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                 <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editToteModal.onOpen}>Edit Tote</Button>
                                 <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Tote</Button>
                             </Flex>
+                            <Text color={'fg.subtle'}>Location: {tote.location_obj?<Link variant="underline" color="cyan.500">{tote.location_obj?.name}</Link>: 'Unassigned'}</Text>
                         </VStack>
                         <VStack align={'end'}>
                             {inList && (

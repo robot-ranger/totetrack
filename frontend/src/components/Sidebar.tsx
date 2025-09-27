@@ -1,6 +1,6 @@
 import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator } from '@chakra-ui/react'
 import { NavLink } from 'react-router-dom'
-import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser } from 'react-icons/fi'
+import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin } from 'react-icons/fi'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
 
@@ -23,6 +23,7 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
   const btnRef = useRef<HTMLButtonElement | null>(null)
 
   const links = [
+    { to: '/locations', label: 'Locations', icon: FiMapPin },
     { to: '/', label: 'Totes', icon: FiArchive },
     { to: '/items', label: 'Items', icon: FiTag },
   ]

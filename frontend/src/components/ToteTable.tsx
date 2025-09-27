@@ -6,6 +6,19 @@ import { Accordion as CAccordion, Badge, Box, HStack, Span, Text, Spacer, Flex }
 // Temporary typing shim: Chakra's slot components can trip TS JSX children typing in some setups.
 const Accordion: any = CAccordion as any
 
+const colorPalettes = ['gray', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'cyan', 'purple', 'pink']
+
+const getRandomColorPalette = (seed: string) => {
+  // Use the tote ID as a seed to ensure consistent colors for the same tote
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32-bit integer
+  }
+  return colorPalettes[Math.abs(hash) % colorPalettes.length]
+}
+
 export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect?: (id: string) => void }) {
   return (
     <Accordion.Root variant="outline" size="md" collapsible>
@@ -14,9 +27,9 @@ export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect
           <Accordion.ItemTrigger onClick={() => onSelect?.(t.id)}>
             <HStack flex="1" gap="3" align="center">
               <Span fontWeight="semibold">{t.name || 'Untitled Tote'}</Span>
-              <Text color="fg.muted">#{t.id.slice(-6)}</Text>
+              <Badge variant={"subtle"} colorPalette={getRandomColorPalette(t.id)}>#{t.id.slice(-6)}</Badge>
               {t.location && (
-                <Badge variant="subtle" colorPalette="blue">{t.location}</Badge>
+                <Badge variant="subtle" colorPalette={getRandomColorPalette(t.location + t.id)}>{t.location}</Badge>
               )}
               <Text lineClamp={1}>{t.metadata_json}</Text>
               <Spacer />

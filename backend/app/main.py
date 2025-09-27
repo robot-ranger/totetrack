@@ -20,6 +20,7 @@ openapi_tags = [
     {"name": "users", "description": "Authentication, user management, and password recovery."},
     {"name": "totes", "description": "CRUD operations for totes."},
     {"name": "items", "description": "CRUD operations for items, including image upload and deletion."},
+    {"name": "locations", "description": "CRUD operations for locations."},
 ]
 
 app = FastAPI(title="Tote Inventory API", openapi_tags=openapi_tags)
@@ -148,7 +149,7 @@ def get_totes(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    return crud.list_totes(db, user_id=current_user.id)
+    return crud.list_totes(db, user_id=None)
 
 
 @app.get("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
@@ -157,7 +158,7 @@ def get_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    m = crud.get_tote(db, tote_id, user_id=current_user.id)
+    m = crud.get_tote_by_id(db, tote_id)
     if not m:
         raise HTTPException(status_code=404, detail="Tote not found")
     return m
@@ -192,6 +193,77 @@ def update_tote(
         raise HTTPException(status_code=404, detail="Tote not found")
     updated = crud.update_tote(db, tote, tote_in)
     return updated
+
+# Locations
+
+
+@app.post("/locations", response_model=schemas.LocationOut, tags=["locations"])
+def create_location(
+    location: schemas.LocationCreate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    return crud.create_location(db, location, user_id=current_user.id)
+
+
+@app.get("/locations", response_model=List[schemas.LocationOut], tags=["locations"])
+def get_locations(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    return crud.list_locations(db, user_id=current_user.id)
+
+
+@app.get("/locations/{location_id}", response_model=schemas.LocationOut, tags=["locations"])
+def get_location(
+    location_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    location = crud.get_location(db, location_id, user_id=current_user.id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+    return location
+
+
+@app.delete("/locations/{location_id}", tags=["locations"])
+def delete_location(
+    location_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    location = crud.get_location(db, location_id, user_id=current_user.id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+    crud.delete_location(db, location)
+    return {"ok": True}
+
+
+@app.put("/locations/{location_id}", response_model=schemas.LocationOut, tags=["locations"])
+def update_location(
+    location_id: str,
+    location_in: schemas.LocationUpdate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    location = crud.get_location(db, location_id, user_id=current_user.id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+    updated = crud.update_location(db, location, location_in)
+    return updated
+
+
+@app.get("/locations/{location_id}/totes", response_model=List[schemas.ToteOut], tags=["locations"])
+def get_location_totes(
+    location_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    location = crud.get_location(db, location_id, user_id=current_user.id)
+    if not location:
+        raise HTTPException(status_code=404, detail="Location not found")
+    return location.totes
+
 
 # Items
 
@@ -236,7 +308,7 @@ async def all_items(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    rows = crud.list_items(db, user_id=current_user.id)
+    rows = crud.list_all_items(db)
     out = []
     for r in rows:
         out.append({
@@ -256,7 +328,7 @@ async def items_in_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    rows = crud.list_items_in_tote(db, tote_id, user_id=current_user.id)
+    rows = crud.list_items_in_tote_by_id(db, tote_id)
     out = []
     for r in rows:
         out.append({

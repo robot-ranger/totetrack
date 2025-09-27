@@ -9,10 +9,19 @@ export interface Item {
     tote_id?: string | null
 }
 
+export interface Location {
+    id: string
+    name: string
+    description?: string | null
+    user_id: string
+}
+
 export interface Tote {
     id: string
     name?: string | null
-    location?: string | null
+    location?: string | null  // Keep for backward compatibility
+    location_id?: string | null
+    location_obj?: Location | null
     metadata_json?: string | null
     description?: string | null
     items: Item[]
