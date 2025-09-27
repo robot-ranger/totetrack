@@ -38,7 +38,9 @@ export default function TotesPage() {
 
     return (
     <Stack gap={6}>
-
+            <Heading fontSize="xl" fontWeight="bold">
+                Totes
+            </Heading>
             {open && (
                 <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">

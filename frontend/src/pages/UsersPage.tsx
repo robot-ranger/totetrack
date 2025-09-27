@@ -163,7 +163,7 @@ export default function UsersPage() {
     return (
         <VStack align="stretch" gap={6}>
             <HStack justify="space-between">
-                <Heading size="lg">Users</Heading>
+                <Heading size="xl"  fontWeight="bold">Users</Heading>
                 <Button onClick={createModal.onOpen} colorPalette={"yellow"}>
                     <FiUserPlus style={{ marginRight: '8px' }} />
                     Add User

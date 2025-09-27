@@ -90,6 +90,9 @@ export default function ItemsPage() {
 
     return (
         <Box display="grid" gap={4}>
+            <Heading fontSize="xl" fontWeight="bold">
+                Items
+            </Heading>
             <HStack align={'end'}>
                 <VStack alignItems="start" w='full'>
                     <Text textStyle='sm'>Search:</Text>
@@ -135,7 +138,7 @@ export default function ItemsPage() {
                 <Flex align="center" justify="center" p={4}>
                     <Box textAlign="center">
                         <Heading>No items found.</Heading>
-                        {items.length === 0 && <Box color={"fg.subtle"}>Add items to a <Link color='cyan.500' href="/totes">tote</Link> to get started.</Box>}
+                        {items.length === 0 && <Box color={"fg.subtle"}>Add items to a <Link color='teal.500' href="/totes">tote</Link> to get started.</Box>}
                     </Box>
                 </Flex>
             ) : (

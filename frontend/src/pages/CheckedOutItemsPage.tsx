@@ -58,11 +58,11 @@ export default function CheckedOutItemsPage() {
     }
 
     return (
-        <VStack align="stretch" gap={6} p={6}>
+        <VStack align="stretch" gap={6}>
             <HStack justify="space-between">
-                <Text fontSize="2xl" fontWeight="bold">
+                <Heading fontSize="xl" fontWeight="bold">
                     Checked Out Items
-                </Text>
+                </Heading>
                 <Button onClick={loadCheckedOutItems} variant="outline">
                     Refresh
                 </Button>
@@ -107,7 +107,7 @@ export default function CheckedOutItemsPage() {
                                 <Table.Cell>
                                     {checkout.item.tote_id ? (
                                         <RouterLink to={`/totes/${checkout.item.tote_id}`}>
-                                            <Text color="cyan.500" textDecoration="underline">
+                                            <Text color="teal.500" textDecoration="underline">
                                                 {checkout.item.tote_id.slice(-6)}
                                             </Text>
                                         </RouterLink>
