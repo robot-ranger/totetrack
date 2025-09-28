@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { listItems, listTotes, checkoutItem, checkinItem } from '../api'
 import type { ItemWithCheckoutStatus, Tote } from '../types'
-import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link } from '@chakra-ui/react'
+import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link, Button, Image, Stack } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import ItemsTable from '../components/ItemsTable'
+import ItemForm from '../components/ItemForm'
+import { FiX } from 'react-icons/fi'
 
 
 export default function ItemsPage() {
@@ -12,6 +14,8 @@ export default function ItemsPage() {
     const [q, setQ] = useState('')
     const [sortKey, setSortKey] = useState<keyof ItemWithCheckoutStatus>('name')
     const [asc, setAsc] = useState(true)
+    const [editModalOpen, setEditModalOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<ItemWithCheckoutStatus | null>(null)
 
     // Combobox collection for sort options
     const sortItems = useMemo(() => (
@@ -60,6 +64,11 @@ export default function ItemsPage() {
         }
     }
 
+    const handleEdit = (item: ItemWithCheckoutStatus) => {
+        setEditingItem(item)
+        setEditModalOpen(true)
+    }
+
     useEffect(() => {
         loadData()
     }, [])
@@ -85,7 +94,7 @@ export default function ItemsPage() {
 
 
     return (
-        <Box display="grid" gap={4}>
+        <Stack display="grid" gap={6}>
             <Heading fontSize="xl" fontWeight="bold">
                 Items
             </Heading>
@@ -141,12 +150,55 @@ export default function ItemsPage() {
                 <ItemsTable
                     items={filtered}
                     totes={totes}
+                    onEdit={handleEdit}
                     onCheckout={handleCheckout}
                     onCheckin={handleCheckin}
                     showToteColumn={true}
                     showLocationColumn={true}
                 />
             )}
-        </Box>
+            
+            {/* Edit Item Modal */}
+            {editModalOpen && editingItem && (
+                <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
+                    <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                            <Heading size="md">Edit Item</Heading>
+                            <Button size="sm" variant="ghost" onClick={() => setEditModalOpen(false)}><FiX /></Button>
+                        </Box>
+                        {editingItem.image_url && (
+                            <Box mb={4} display="flex" justifyContent="center">
+                                <Image
+                                    src={editingItem.image_url}
+                                    alt={editingItem.name}
+                                    maxH="240px"
+                                    objectFit="contain"
+                                    borderRadius="md"
+                                    boxShadow="md"
+                                />
+                            </Box>
+                        )}
+                        <ItemForm
+                            toteId={editingItem.tote_id || ''}
+                            existing={editingItem}
+                            onCreated={() => {
+                                loadData()
+                                setEditModalOpen(false)
+                            }}
+                            onUpdated={() => {
+                                loadData()
+                                setEditingItem(null)
+                                setEditModalOpen(false)
+                            }}
+                            onDeleted={() => {
+                                loadData()
+                                setEditModalOpen(false)
+                                setEditingItem(null)
+                            }}
+                        />
+                    </Box>
+                </Box>
+            )}
+        </Stack>
     )
 }

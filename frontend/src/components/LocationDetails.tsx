@@ -61,7 +61,7 @@ export default function LocationDetails({ locationId, inList = false }: { locati
     if (loading) return <Text>Loading location details...</Text>
 
     return (
-        <Box p={4} borderWidth="1px" borderRadius="md">
+        <Box p={4} borderWidth="1px" borderRadius="md" borderColor="blue.focusRing">
             {location && (
                 <>
                     <Flex justifyContent="space-between" alignItems="start" mb={2}>

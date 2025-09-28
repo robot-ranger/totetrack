@@ -3,7 +3,7 @@ import { listLocations, deleteLocation, listTotes } from '../api'
 import type { Location, Tote } from '../types'
 import LocationForm from '../components/LocationForm'
 import LocationTable from '../components/LocationTable'
-import { Box, Heading, Stack, Button, useDisclosure, HStack, Input, IconButton, Flex } from '@chakra-ui/react'
+import { Box, Heading, Stack, Text, Button, useDisclosure, HStack, Input, IconButton, Flex, VStack } from '@chakra-ui/react'
 import { FiX, FiTrash2 } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 
@@ -129,15 +129,17 @@ export default function LocationsPage() {
                     </Box>
                 </Box>
             )}
-            
-            <HStack>
-                <Input 
-                    placeholder="Search locations and totes by name or ID…" 
-                    value={q} 
-                    onChange={e => setQ(e.target.value)}
-                />
-                <Button colorPalette="blue" onClick={onOpen}>Add Location</Button>
-            </HStack>
+            <VStack alignItems="start" w='full'>
+                <Text textStyle='sm'>Search:</Text>
+                <HStack w='full'>
+                    <Input 
+                        placeholder="Search locations and totes by name or ID…" 
+                        value={q} 
+                        onChange={e => setQ(e.target.value)}
+                    />
+                    <Button colorPalette="blue" onClick={onOpen}>Add Location</Button>
+                </HStack>
+            </VStack>
             {locations.length === 0 ? (
                 <Flex align="center" justify="center" p={4}>
                     <Box textAlign="center">
