@@ -10,7 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -47,8 +47,10 @@ services:
     depends_on:
       - backend
     ports:
-      - "8888:80"
+      - "${FRONTEND_PORT:-8888}:80"
 
 volumes:
   postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-totetrack}_postgres_data
   media_data:
+    name: ${COMPOSE_PROJECT_NAME:-totetrack}_media_data
