@@ -44,7 +44,10 @@ def init_superuser():
     if not email or not password:
         return
     with SessionLocal() as db:
+        print("[startup] Checking for initial superuser", email)
         existing = crud.get_user_by_email(db, email.lower())
+        
+        print(f"[startup] found {email}" if existing else "not found")
         if not existing:
             crud.create_user(db, schemas.UserCreate(email=email, password=password, full_name="Admin", is_superuser=True))
             print("[startup] Created initial superuser", email)

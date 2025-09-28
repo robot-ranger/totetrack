@@ -1,8 +1,5 @@
 version: "3.9"
 
-env_file:
-  - stack.env
-
 services:
   db:
     image: postgres:16
@@ -19,7 +16,7 @@ services:
       retries: 5
 
   backend:
-    image: ghcr.io/robot-ranger/totetrack/backend:sha-8e0e60f
+    image: ghcr.io/robot-ranger/totetrack/backend:latest
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -41,7 +38,7 @@ services:
       - "${BACKEND_PORT:-8880}:8000"
 
   frontend:
-    image: ghcr.io/robot-ranger/totetrack/frontend:sha-8e0e60f
+    image: ghcr.io/robot-ranger/totetrack/frontend:latest
     build:
       context: ./frontend
       dockerfile: dockerfile
@@ -50,7 +47,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "8888:80"
 
 volumes:
   postgres_data:
