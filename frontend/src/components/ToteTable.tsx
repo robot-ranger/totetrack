@@ -2,6 +2,7 @@ import { Tote } from '../types'
 import QRLabel from './QRLabel'
 import ToteDetail from './ToteDetail'
 import { Accordion as CAccordion, Badge, Box, HStack, Span, Text, Spacer, Flex } from '@chakra-ui/react'
+import { useNavigate } from 'react-router-dom'
 
 // Temporary typing shim: Chakra's slot components can trip TS JSX children typing in some setups.
 const Accordion: any = CAccordion as any
@@ -19,12 +20,17 @@ const getRandomColorPalette = (seed: string) => {
   return colorPalettes[Math.abs(hash) % colorPalettes.length]
 }
 
-export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect?: (id: string) => void }) {
+export default function ToteTable({ totes, onSelect, inList = false }: { totes: Tote[]; onSelect?: (id: string) => void; inList?: boolean }) {
+  const navigate = useNavigate()
+  
   return (
     <Accordion.Root variant="outline" size="md" collapsible>
       {totes.map((t) => (
         <Accordion.Item key={t.id} value={t.id}>
-          <Accordion.ItemTrigger onClick={() => onSelect?.(t.id)}>
+          <Accordion.ItemTrigger 
+            onClick={() => inList ? navigate(`/totes/${t.id}`) : onSelect?.(t.id)}
+            _hover={{ bg: 'bg.muted' }}
+          >
             <HStack flex="1" gap="3" align="center">
               <Span fontWeight="semibold">{t.name || 'Untitled Tote'}</Span>
               <Badge variant={"subtle"} colorPalette={getRandomColorPalette(t.id)}>#{t.id.slice(-6)}</Badge>
@@ -47,9 +53,7 @@ export default function ToteTable({ totes, onSelect }: { totes: Tote[]; onSelect
           </Accordion.ItemTrigger>
           <Accordion.ItemContent>
             <Accordion.ItemBody>
-                <Box py={2}>
-                  <ToteDetail toteId={t.id} inList />
-                </Box>
+              <ToteDetail toteId={t.id} inList />
             </Accordion.ItemBody>
           </Accordion.ItemContent>
         </Accordion.Item>

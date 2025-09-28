@@ -61,7 +61,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
     if (!toteId) return <Text>Missing tote id.</Text>
 
     return (
-        <Box p={4} borderWidth="1px" borderRadius="md">
+        <Box p={4} borderWidth="1px" borderRadius="md" borderColor="yellow.focusRing">
             {tote && (
                 <>
                     <Flex justifyContent="space-between" alignItems="start" mb={2}>
@@ -73,7 +73,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                 <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editToteModal.onOpen}>Edit Tote</Button>
                                 <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Tote</Button>
                             </Flex>
-                            <Text color={'fg.subtle'}>Location: {tote.location_obj?<Link variant="underline" color="teal.500">{tote.location_obj?.name}</Link>: 'Unassigned'}</Text>
+                            <Text color={'fg.subtle'}>Location: {tote.location_obj ? <Link variant="underline" color="teal.500" asChild><RouterLink to={`/locations/${tote.location_obj.id}`}>{tote.location_obj.name}</RouterLink></Link> : 'Unassigned'}</Text>
                         </VStack>
                         <VStack align={'end'}>
                             {inList && (

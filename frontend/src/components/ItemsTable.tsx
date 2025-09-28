@@ -68,15 +68,9 @@ export default function ItemsTable({
                 </Table.Cell>
                 <Table.Cell textAlign="end">{item.quantity}</Table.Cell>
                 <Table.Cell>
-                  {item.is_checked_out ? (
-                    <Badge colorPalette="orange" variant="subtle">
-                      Checked Out
-                    </Badge>
-                  ) : (
-                    <Badge colorPalette="green" variant="subtle">
-                      In Tote
-                    </Badge>
-                  )}
+                <Badge colorPalette={item.is_checked_out ? 'orange' : 'green'} variant="surface">
+                    {item.is_checked_out ? 'Checked Out' : 'In Tote'}
+                </Badge>
                 </Table.Cell>
                 {showToteColumn && (
                   <Table.Cell>
@@ -84,8 +78,7 @@ export default function ItemsTable({
                         <Box>{`${tote.name} (`}
                       <Link asChild variant="underline" color="teal.500">
                         <RouterLink to={`/totes/${tote.id}`}>
-                           
-                          {tote.id.slice(-6)}
+                          {tote.id.slice(-6)} <FiExternalLink style={{ display: 'inline', verticalAlign: 'middle' }} />
                         </RouterLink>
                       </Link>
                       {`)`}

@@ -7,6 +7,7 @@ import ToteDetailPage from './pages/ToteDetailPage'
 import ItemsPage from './pages/ItemsPage'
 import UsersPage from './pages/UsersPage'
 import LocationsPage from './pages/LocationsPage'
+import LocationDetailsPage from './pages/LocationDetailsPage'
 import CheckedOutItemsPage from './pages/CheckedOutItemsPage'
 import { FiDownloadCloud, FiMoon, FiSun, FiMenu, FiUser, FiSettings } from 'react-icons/fi'
 import { Link as RouterLink } from 'react-router-dom'
@@ -124,6 +125,7 @@ export default function App() {
                     <Route path="/items" element={<ItemsPage />} />
                     <Route path="/checked-out" element={<CheckedOutItemsPage />} />
                     <Route path="/locations" element={<LocationsPage />} />
+                    <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
                     <Route path="/users" element={<UsersPage />} />
                     <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
