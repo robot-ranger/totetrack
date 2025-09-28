@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createTote, updateTote, listLocations } from '../api'
 import type { Tote, Location } from '../types'
-import { Button, Grid, GridItem, Input, Textarea, Box, Combobox, Portal, createListCollection } from '@chakra-ui/react'
+import { Button, Grid, GridItem, Input, Textarea, Box, Select, Portal, createListCollection } from '@chakra-ui/react'
+import { transform } from 'framer-motion'
+import { useColorMode } from './ui/color-mode'
 
 
 interface ToteFormProps {
@@ -17,11 +19,27 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
     const [description, setDesc] = useState(existing?.description || '')
     const [locations, setLocations] = useState<Location[]>([])
     const [busy, setBusy] = useState(false)
+    const { colorMode, toggleColorMode } = useColorMode()
     // TODO: Integrate new toast API (createToaster) after setup. For now use console.
     const toast = (opts: { title: string }) => { console.log(opts.title) }
 
-    // Temporary: alias to relax overly-strict TS props on Combobox subcomponents in this project setup
-    const Cbx = Combobox as any
+    // Temporary: alias to relax overly-strict TS props on Select subcomponents in this project setup
+    const Sel = Select as any
+
+    // Create proper collection using createListCollection - only when locations are available
+    const collection = useMemo(() => {
+        if (locations.length === 0) {
+            return null
+        }
+        const collectionItems = locations.map(location => ({
+            label: location.name,
+            value: location.id
+        }))
+
+        return createListCollection({
+            items: collectionItems
+        })
+    }, [locations])
 
     useEffect(() => {
         async function loadLocations() {
@@ -34,6 +52,27 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
         }
         loadLocations()
     }, [])
+
+    // Update form fields when existing tote changes
+    useEffect(() => {
+        if (existing) {
+            setName(existing.name || '')
+            setMeta(existing.metadata_json || '')
+            setDesc(existing.description || '')
+            // Only set locationId if we have locations loaded and the location exists
+            if (existing.location_id && locations.length > 0) {
+                const locationExists = locations.some(loc => loc.id === existing.location_id)
+
+                setLocationId(locationExists ? [existing.location_id] : [])
+            } else if (existing.location_id) {
+                // If we have a location_id but no locations loaded yet, set it anyway
+
+                setLocationId([existing.location_id])
+            } else {
+                setLocationId([])
+            }
+        }
+    }, [existing, locations])
 
     const isEdit = !!existing
 
@@ -80,41 +119,38 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
                 <GridItem>
                     <Box display="grid" gap={1}>
                         <Box as="label" fontSize="sm" fontWeight="medium">Storage location</Box>
-                        <Cbx.Root
-                            collection={createListCollection({
-                                items: locations.map(location => ({
-                                    label: location.name,
-                                    value: location.id
-                                }))
-                            })}
+                        {collection ? (
+                        <Sel.Root
+                            key={`select-${existing?.id || 'new'}-${locations.length}`}
+                            collection={collection}
                             value={locationId}
                             onValueChange={(details: any) => setLocationId(details.value)}
-                            selectionBehavior="replace"
                         >
-                            <Cbx.Control>
-                                <Cbx.Input />
-                                <Cbx.IndicatorGroup>
-                                    <Cbx.ClearTrigger />
-                                    <Cbx.Trigger />
-                                </Cbx.IndicatorGroup>
-                            </Cbx.Control>
+                            <Sel.HiddenSelect />
+                            <Sel.Control>
+                                <Sel.Trigger>
+                                    <Sel.ValueText placeholder="Select a location" />
+                                </Sel.Trigger>
+                                <Sel.IndicatorGroup>
+                                    <Sel.Indicator />
+                                </Sel.IndicatorGroup>
+                            </Sel.Control>
                             <Portal>
-                                <Cbx.Positioner>
-                                    <Cbx.Content>
-                                        <Cbx.Empty>No locations found</Cbx.Empty>
-                                        {locations.map((location) => (
-                                            <Cbx.Item 
-                                                key={location.id} 
-                                                item={{ label: location.name, value: location.id }}
-                                            >
-                                                {location.name}
-                                                <Cbx.ItemIndicator />
-                                            </Cbx.Item>
+                                <Sel.Positioner>
+                                    <Sel.Content style={{ zIndex: 9999, backgroundColor: colorMode === 'dark' ? 'black' : 'white'}}>
+                                        {collection.items.map((item: any) => (
+                                            <Sel.Item key={item.value} item={item}>
+                                                <Sel.ItemText>{item.label}</Sel.ItemText>
+                                                <Sel.ItemIndicator />
+                                            </Sel.Item>
                                         ))}
-                                    </Cbx.Content>
-                                </Cbx.Positioner>
+                                    </Sel.Content>
+                                </Sel.Positioner>
                             </Portal>
-                        </Cbx.Root>
+                        </Sel.Root>
+                        ) : (
+                            <Input value="Loading locations..." disabled />
+                        )}
                     </Box>
                 </GridItem>
                 <GridItem colSpan={2}>
