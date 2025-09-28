@@ -9,7 +9,7 @@ export default function QRLabel({ uuid, name, compact = false }: { uuid: string;
     const qrWrapperRef = useRef<HTMLDivElement | null>(null)
     const last6 = uuid.replace(/-/g, '').slice(-6)
     const size = compact ? 64 : 180
-    const url = `https://${window.location.host}/totes/${uuid}`
+    const url = `http://${window.location.host}/totes/${uuid}`
 
     function handleClick(e: MouseEvent) {
         // Prevent parent row navigation
