@@ -19,6 +19,7 @@ import { ProfileModal } from './components/ProfileModal'
 import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
 import LandingPage from './pages/LandingPage'
+import { SidebarRefreshProvider } from './SidebarRefreshContext'
 
 const sidebarWidth = 220
 
@@ -95,43 +96,45 @@ export default function App() {
 
     // Authenticated routes
     return (
-        <Box display="flex" minH="100vh">
-            <Sidebar
-                width={sidebarWidth}
-                mobileOpen={navOpen}
-                onMobileOpenChange={setNavOpen}
-                hideHamburger
-                onProfile={() => setProfileOpen(true)}
-                onLogout={logout}
-                onWidthChange={setSidebarCurrentWidth}
-            />
-            <Box flex="1" ml={{ base: 0, md: `${sidebarCurrentWidth}px` }} px={4} py={4}>
-                <HStack mb={4} gap={4}>
-                    <HStack gap={3}>
-                        <IconButton display={{ base: 'inline-flex', md: 'none' }} aria-label="Open navigation" variant="ghost" size="sm" onClick={() => setNavOpen(true)}>
-                            <FiMenu />
-                        </IconButton>
-                        <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
+        <SidebarRefreshProvider>
+            <Box display="flex" minH="100vh">
+                <Sidebar
+                    width={sidebarWidth}
+                    mobileOpen={navOpen}
+                    onMobileOpenChange={setNavOpen}
+                    hideHamburger
+                    onProfile={() => setProfileOpen(true)}
+                    onLogout={logout}
+                    onWidthChange={setSidebarCurrentWidth}
+                />
+                <Box flex="1" ml={{ base: 0, md: `${sidebarCurrentWidth}px` }} px={4} py={4}>
+                    <HStack mb={4} gap={4}>
+                        <HStack gap={3}>
+                            <IconButton display={{ base: 'inline-flex', md: 'none' }} aria-label="Open navigation" variant="ghost" size="sm" onClick={() => setNavOpen(true)}>
+                                <FiMenu />
+                            </IconButton>
+                            <NavLink to='/'><HStack><Image src={"totetrackr.png"} alt="Boxly" w={30}/><Heading size="md">ToteTrackr</Heading></HStack></NavLink>
+                        </HStack>
+                        <Spacer />
+                        <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
+                        <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
+                        <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
+                            <Icon size={'sm'}><FiSettings /></Icon>
+                        </Button>
                     </HStack>
-                    <Spacer />
-                    <IconButton aria-label="Toggle color mode" variant="subtle" size="sm" color={colorMode === 'light' ? 'gray.100' : 'gray.700'} bg={colorMode === 'light' ? 'gray.700' : 'gray.100'} onClick={toggleColorMode}>{colorMode === 'light' ? <FiMoon /> : <FiSun />}</IconButton>
-                    <IconButton aria-label="Download items CSV" variant="subtle" size="sm" onClick={handleDownloadCsv}><FiDownloadCloud /></IconButton>
-                    <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
-                        <Icon size={'sm'}><FiSettings /></Icon>
-                    </Button>
-                </HStack>
-                <Routes>
-                    <Route path="/" element={<TotesPage />} />
-                    <Route path="/items" element={<ItemsPage />} />
-                    <Route path="/checked-out" element={<CheckedOutItemsPage />} />
-                    <Route path="/locations" element={<LocationsPage />} />
-                    <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
-                    <Route path="/users" element={<UsersPage />} />
-                    <Route path="/totes/:toteId" element={<ToteDetailPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-                <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={logout} />
+                    <Routes>
+                        <Route path="/" element={<TotesPage />} />
+                        <Route path="/items" element={<ItemsPage />} />
+                        <Route path="/checked-out" element={<CheckedOutItemsPage />} />
+                        <Route path="/locations" element={<LocationsPage />} />
+                        <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
+                        <Route path="/users" element={<UsersPage />} />
+                        <Route path="/totes/:toteId" element={<ToteDetailPage />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                    <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={logout} />
+                </Box>
             </Box>
-        </Box>
+        </SidebarRefreshProvider>
     )
 }

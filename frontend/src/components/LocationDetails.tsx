@@ -6,6 +6,7 @@ import type { Location, Tote } from '../types'
 import LocationForm from './LocationForm'
 import { FiExternalLink, FiX } from 'react-icons/fi'
 import ToteTable from './ToteTable'
+import { DeleteButton, EditButton } from './ui/buttons'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -66,7 +67,7 @@ export default function LocationDetails({ locationId, inList = false }: { locati
                 <>
                     <Flex justifyContent="space-between" alignItems="start" mb={2}>
                         <VStack alignItems="start">
-                            {!inList && <Heading size="2xl" mb={2}>{location.name}</Heading>}
+                            {!inList && <Box><Heading size="2xl" mb={2}>{location.name}</Heading>
                             <HStack gap={2}>
                                 <Badge variant={"subtle"} colorPalette={getRandomColorPalette(location.id)}>
                                     #{location.id.slice(-6)}
@@ -75,10 +76,10 @@ export default function LocationDetails({ locationId, inList = false }: { locati
                                     {totes.length} totes
                                 </Badge>
                             </HStack>
-                            {location.description && <Text mt={2} whiteSpace="pre-wrap">{location.description}</Text>}
+                            {location.description && <Text mt={2} whiteSpace="pre-wrap">{location.description}</Text>}</Box>}
                             <Flex gap={2} mt={2}>
-                                <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editModal.onOpen}>Edit Location</Button>
-                                <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Location</Button>
+                                <EditButton onClick={editModal.onOpen} topic='Location' />
+                                <DeleteButton onClick={delDialog.onOpen} topic='Location' />
                             </Flex>
                         </VStack>
                         <VStack align={'end'}>

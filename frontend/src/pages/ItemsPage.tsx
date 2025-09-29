@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { listItems, listTotes, checkoutItem, checkinItem } from '../api'
 import type { ItemWithCheckoutStatus, Tote } from '../types'
 import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link, Button, Image, Stack } from '@chakra-ui/react'
-import { Link as RouterLink } from 'react-router-dom'
 import ItemsTable from '../components/ItemsTable'
 import ItemForm from '../components/ItemForm'
 import { FiX } from 'react-icons/fi'
+import { useColorMode } from '../components/ui/color-mode'
 
 
 export default function ItemsPage() {
@@ -143,7 +143,7 @@ export default function ItemsPage() {
                 <Flex align="center" justify="center" p={4}>
                     <Box textAlign="center">
                         <Heading>No items found.</Heading>
-                        {items.length === 0 && <Box color={"fg.subtle"}>Add items to a <Link color='teal.500' href="/totes">tote</Link> to get started.</Box>}
+                        {items.length === 0 && <Box color={"fg.subtle"} colorPalette={'teal'}>Add items to a <Link href="/totes">tote</Link> to get started.</Box>}
                     </Box>
                 </Flex>
             ) : (

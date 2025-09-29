@@ -5,6 +5,7 @@ import { LuPackageMinus } from 'react-icons/lu'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
 import { listLocations, listTotes, listItems, fetchCheckedOutItems, listUsers } from '../api'
+import { useSidebarRefresh } from '../SidebarRefreshContext'
 
 /**
  * Sidebar navigation shown for authenticated users.
@@ -14,6 +15,7 @@ import { listLocations, listTotes, listItems, fetchCheckedOutItems, listUsers } 
  */
 export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHamburger, onProfile, onLogout, onWidthChange }: { width?: number; mobileOpen?: boolean; onMobileOpenChange?: (open: boolean) => void; hideHamburger?: boolean; onProfile?: () => void; onLogout?: () => void; onWidthChange?: (w: number) => void }) {
   const { user } = useAuth()
+  const { refreshTrigger } = useSidebarRefresh()
   const isMobile = useBreakpointValue({ base: true, md: false })
   const [internalOpen, setInternalOpen] = useState(false)
   const controlled = mobileOpen !== undefined && !!onMobileOpenChange
@@ -57,12 +59,12 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
     }
   }
 
-  // Fetch counts on mount and when user changes
+  // Fetch counts on mount, when user changes, and when refresh is triggered
   useEffect(() => {
     if (user) {
       fetchCounts()
     }
-  }, [user])
+  }, [user, refreshTrigger])
 
   const links = [
     { to: '/locations', label: 'Locations', icon: FiMapPin, count: counts.locations },

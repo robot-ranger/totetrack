@@ -3,6 +3,7 @@ version: "3.9"
 services:
   db:
     image: postgres:16
+    container_name: ${COMPOSE_PROJECT_NAME:-totetrack}_db
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -17,6 +18,7 @@ services:
 
   backend:
     image: ghcr.io/robot-ranger/totetrack/backend:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-totetrack}_backend
     build:
       context: .
       dockerfile: backend/Dockerfile
@@ -39,6 +41,7 @@ services:
 
   frontend:
     image: ghcr.io/robot-ranger/totetrack/frontend:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-totetrack}_frontend
     build:
       context: ./frontend
       dockerfile: dockerfile

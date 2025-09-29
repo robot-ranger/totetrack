@@ -4,6 +4,7 @@ import type { Tote, Location } from '../types'
 import { Button, Grid, GridItem, Input, Textarea, Box, Select, Portal, createListCollection } from '@chakra-ui/react'
 import { transform } from 'framer-motion'
 import { useColorMode } from './ui/color-mode'
+import { useSidebarRefresh } from '../SidebarRefreshContext'
 
 
 interface ToteFormProps {
@@ -20,6 +21,7 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
     const [locations, setLocations] = useState<Location[]>([])
     const [busy, setBusy] = useState(false)
     const { colorMode, toggleColorMode } = useColorMode()
+    const { triggerRefresh } = useSidebarRefresh()
     // TODO: Integrate new toast API (createToaster) after setup. For now use console.
     const toast = (opts: { title: string }) => { console.log(opts.title) }
 
@@ -98,6 +100,7 @@ export default function ToteForm({ onCreated, existing, onUpdated }: ToteFormPro
                     description 
                 })
                 onCreated?.(created)
+                triggerRefresh() // Refresh sidebar counts after creating tote
                 setName(''); setLocationId([]); setMeta(''); setDesc('')
                 toast({ title: 'Tote added' })
             }

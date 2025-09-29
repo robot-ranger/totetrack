@@ -8,6 +8,8 @@ import ToteForm from './ToteForm'
 import QRLabel from './QRLabel'
 import ItemsTable from './ItemsTable'
 import { FiExternalLink, FiX } from 'react-icons/fi'
+import { DeleteButton, EditButton } from './ui/buttons'
+import { useSidebarRefresh } from '../SidebarRefreshContext'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -18,10 +20,11 @@ function useSimpleDisclosure(initial = false) {
 export default function ToteDetail({ toteId, inList = false }: { toteId: string, inList?: boolean }) {
     const [tote, setTote] = useState<Tote | null>(null)
     const [items, setItems] = useState<ItemWithCheckoutStatus[]>([])
-    const addModal = useSimpleDisclosure()
-    const editToteModal = useSimpleDisclosure()
-    const delDialog = useSimpleDisclosure()
     const [editing, setEditing] = useState<Item | null>(null)
+    const { triggerRefresh } = useSidebarRefresh()
+    const addModal = useSimpleDisclosure(false)
+    const editToteModal = useSimpleDisclosure(false)
+    const delDialog = useSimpleDisclosure(false)
 
     async function load() {
         if (!toteId) return
@@ -70,10 +73,10 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                             {tote.location && <Text><b>Location:</b> {tote.location}</Text>}
                             {tote.description && <Text mt={2} whiteSpace="pre-wrap">{tote.description}</Text>}
                             <Flex gap={2} mt={2}>
-                                <Button size="xs" colorPalette={'blue'} variant="outline" onClick={editToteModal.onOpen}>Edit Tote</Button>
-                                <Button size="xs" colorPalette="red" variant="outline" onClick={delDialog.onOpen}>Delete Tote</Button>
+                                <EditButton onClick={editToteModal.onOpen} topic='Tote' />
+                                <DeleteButton onClick={delDialog.onOpen} topic='Tote' />
                             </Flex>
-                            <Text color={'fg.subtle'}>Location: {tote.location_obj ? <Link variant="underline" color="teal.500" asChild><RouterLink to={`/locations/${tote.location_obj.id}`}>{tote.location_obj.name}</RouterLink></Link> : 'Unassigned'}</Text>
+                            <Text color={'fg.subtle'}>Location: {tote.location_obj ? <Link variant="underline" color="teal.500" asChild><RouterLink to={`/locations/${tote.location_obj.id}`}>{tote.location_obj.name} <FiExternalLink/></RouterLink></Link> : 'Unassigned'}</Text>
                         </VStack>
                         <VStack align={'end'}>
                             {inList && (
@@ -174,6 +177,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                                 try {
                                     await deleteTote(tote.id)
                                     delDialog.onClose()
+                                    triggerRefresh() // Refresh sidebar counts after deleting tote
                                     // After deletion, clear local state.
                                     setTote(null)
                                     setItems([])
