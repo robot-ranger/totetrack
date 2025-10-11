@@ -64,7 +64,6 @@ export default function UserForm({ user, onSubmit, onCancel, loading }: UserForm
                     email: email.trim(),
                     full_name: fullName.trim() || undefined,
                     password: password.trim(),
-                    is_superuser: isSuperuser,
                 } as CreateUserForm
 
             await onSubmit(formData)
@@ -118,17 +117,19 @@ export default function UserForm({ user, onSubmit, onCancel, loading }: UserForm
                 </Field>
             )}
 
-            <Field label="Permissions">
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={isSuperuser}
-                        onChange={(e) => setIsSuperuser(e.target.checked)}
-                        style={{ marginRight: '8px' }}
-                    />
-                    Superuser (full admin access)
-                </label>
-            </Field>
+            {isEditing && (
+                <Field label="Permissions">
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={isSuperuser}
+                            onChange={(e) => setIsSuperuser(e.target.checked)}
+                            style={{ marginRight: '8px' }}
+                        />
+                        Superuser (full admin access)
+                    </label>
+                </Field>
+            )}
 
             <HStack gap={2} justify="end">
                 <Button variant="outline" onClick={onCancel} disabled={loading}>

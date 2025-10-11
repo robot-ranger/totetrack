@@ -5,21 +5,34 @@ from sqlalchemy.orm import relationship
 from app.db import Base
 
 
+class Account(Base):
+    __tablename__ = "accounts"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False, unique=True, index=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    users = relationship("User", back_populates="account", cascade="all, delete-orphan")
+    totes = relationship("Tote", back_populates="account", cascade="all, delete-orphan")
+    locations = relationship("Location", back_populates="account", cascade="all, delete-orphan")
+
+
 class Location(Base):
     __tablename__ = "locations"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    account_id = Column(String, ForeignKey("accounts.id"), nullable=False, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
 
-    owner = relationship("User", back_populates="locations")
+    account = relationship("Account", back_populates="locations")
     totes = relationship("Tote", back_populates="location_obj")
 
 
 class Tote(Base):
     __tablename__ = "totes"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    account_id = Column(String, ForeignKey("accounts.id"), nullable=False, index=True)
     name = Column(String, nullable=True)
     location = Column(String, nullable=True)  # Keep for backward compatibility
     location_id = Column(String, ForeignKey("locations.id"), nullable=True, index=True)
@@ -31,7 +44,7 @@ class Tote(Base):
         "Item", back_populates="tote", cascade="all, delete-orphan"
     )
 
-    owner = relationship("User", back_populates="totes")
+    account = relationship("Account", back_populates="totes")
     location_obj = relationship("Location", back_populates="totes")
 
 
@@ -68,6 +81,7 @@ class CheckedOutItem(Base):
 class User(Base):
     __tablename__ = "users"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    account_id = Column(String, ForeignKey("accounts.id"), nullable=False, index=True)
     email = Column(String, nullable=False, unique=True, index=True)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
@@ -82,6 +96,5 @@ class User(Base):
         UniqueConstraint('email', name='uq_users_email'),
     )
 
-    totes = relationship("Tote", back_populates="owner", cascade="all, delete-orphan")
-    locations = relationship("Location", back_populates="owner", cascade="all, delete-orphan")
+    account = relationship("Account", back_populates="users")
     checked_out_items = relationship("CheckedOutItem", back_populates="user", cascade="all, delete-orphan")

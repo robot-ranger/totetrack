@@ -17,6 +17,7 @@ Base.metadata.create_all(bind=engine)
 
 # Instantiate app early so decorators below work
 openapi_tags = [
+    {"name": "accounts", "description": "Account bootstrap and management."},
     {"name": "users", "description": "Authentication, user management, and password recovery."},
     {"name": "totes", "description": "CRUD operations for totes."},
     {"name": "items", "description": "CRUD operations for items, including image upload and deletion."},
@@ -41,6 +42,7 @@ def init_superuser():
     from app.db import SessionLocal  # local import to avoid cycles
     email = os.getenv("INITIAL_SUPERUSER_EMAIL")
     password = os.getenv("INITIAL_SUPERUSER_PASSWORD")
+    account_name = os.getenv("INITIAL_ACCOUNT_NAME", "Default Account")
     if not email or not password:
         return
     with SessionLocal() as db:
@@ -49,11 +51,41 @@ def init_superuser():
         
         print(f"[startup] found {email}" if existing else "not found")
         if not existing:
-            crud.create_user(db, schemas.UserCreate(email=email, password=password, full_name="Admin", is_superuser=True))
-            print("[startup] Created initial superuser", email)
+            try:
+                account, owner = crud.create_account(db, schemas.AccountCreate(
+                    name=account_name,
+                    owner_email=email,
+                    owner_full_name="Admin",
+                    owner_password=password,
+                ))
+                print("[startup] Created initial account", account.name, "with superuser", owner.email)
+            except ValueError as exc:
+                print(f"[startup] Failed to create initial account: {exc}")
 
 
 # Auth & Users
+
+
+@app.post("/accounts", response_model=schemas.AccountBootstrapResponse, tags=["accounts"])
+def bootstrap_account(payload: schemas.AccountCreate, db: Session = Depends(get_session)):
+    try:
+        account, superuser = crud.create_account(db, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return schemas.AccountBootstrapResponse(account=account, superuser=superuser)
+
+
+@app.get("/accounts", response_model=List[schemas.AccountOut], tags=["accounts"])
+def list_accounts(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
+    """Return the caller's account as a list for compatibility with list UIs.
+
+    This system enforces one account per user; there is no global account list.
+    """
+    acc = crud.get_account(db, current_user.account_id)
+    return [acc] if acc else []
 
 
 @app.post("/auth/token", response_model=schemas.Token, tags=["users"])
@@ -79,43 +111,69 @@ def read_users_me(current_user=Depends(security.get_current_active_user)):
 
 
 @app.post("/users", response_model=schemas.UserOut, tags=["users"])
-def create_user(user_in: schemas.UserCreate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
-    existing = crud.get_user_by_email(db, user_in.email)
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    user = crud.create_user(db, user_in)
+def create_user(
+    user_in: schemas.UserCreate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
+    try:
+        user = crud.create_user(db, current_user.account_id, user_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return user
 
 
 @app.get("/users", response_model=List[schemas.UserOut], tags=["users"])
-def list_users(db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
-    return crud.list_users(db)
+def list_users(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
+    return crud.list_users(db, current_user.account_id)
 
 
 @app.get("/users/{user_id}", response_model=schemas.UserOut, tags=["users"])
-def get_user(user_id: str, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+def get_user(
+    user_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
     user = crud.get_user(db, user_id)
-    if not user:
+    if not user or user.account_id != current_user.account_id:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
 @app.put("/users/{user_id}", response_model=schemas.UserOut, tags=["users"])
-def update_user(user_id: str, user_in: schemas.UserUpdate, db: Session = Depends(get_session), _: models.User = Depends(security.get_current_active_superuser)):
+def update_user(
+    user_id: str,
+    user_in: schemas.UserUpdate,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
     user = crud.get_user(db, user_id)
-    if not user:
+    if not user or user.account_id != current_user.account_id:
         raise HTTPException(status_code=404, detail="User not found")
-    return crud.update_user(db, user, user_in)
+    try:
+        return crud.update_user(db, user, user_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @app.delete("/users/{user_id}", tags=["users"])
-def delete_user(user_id: str, db: Session = Depends(get_session), current_user: models.User = Depends(security.get_current_active_superuser)):
+def delete_user(
+    user_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
     user = crud.get_user(db, user_id)
-    if not user:
+    if not user or user.account_id != current_user.account_id:
         raise HTTPException(status_code=404, detail="User not found")
     if user.id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")
-    crud.delete_user(db, user)
+    try:
+        crud.delete_user(db, user)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return {"ok": True}
 
 
@@ -144,7 +202,7 @@ def create_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    return crud.create_tote(db, tote, user_id=current_user.id)
+    return crud.create_tote(db, tote, account_id=current_user.account_id)
 
 
 @app.get("/totes", response_model=List[schemas.ToteOut], tags=["totes"])
@@ -152,7 +210,7 @@ def get_totes(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    return crud.list_totes(db, user_id=None)
+    return crud.list_totes(db, account_id=current_user.account_id)
 
 
 @app.get("/totes/{tote_id}", response_model=schemas.ToteOut, tags=["totes"])
@@ -161,7 +219,7 @@ def get_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    m = crud.get_tote_by_id(db, tote_id)
+    m = crud.get_tote_by_id(db, tote_id, current_user.account_id)
     if not m:
         raise HTTPException(status_code=404, detail="Tote not found")
     return m
@@ -173,7 +231,7 @@ def delete_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
+    tote = crud.get_tote(db, tote_id, account_id=current_user.account_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
     # Cleanup item images before deleting via cascade
@@ -191,7 +249,7 @@ def update_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
+    tote = crud.get_tote(db, tote_id, account_id=current_user.account_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
     updated = crud.update_tote(db, tote, tote_in)
@@ -206,7 +264,7 @@ def create_location(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    return crud.create_location(db, location, user_id=current_user.id)
+    return crud.create_location(db, location, account_id=current_user.account_id)
 
 
 @app.get("/locations", response_model=List[schemas.LocationOut], tags=["locations"])
@@ -214,7 +272,7 @@ def get_locations(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    return crud.list_locations(db, user_id=current_user.id)
+    return crud.list_locations(db, account_id=current_user.account_id)
 
 
 @app.get("/locations/{location_id}", response_model=schemas.LocationOut, tags=["locations"])
@@ -223,7 +281,7 @@ def get_location(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    location = crud.get_location(db, location_id, user_id=current_user.id)
+    location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     return location
@@ -235,7 +293,7 @@ def delete_location(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    location = crud.get_location(db, location_id, user_id=current_user.id)
+    location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     crud.delete_location(db, location)
@@ -249,7 +307,7 @@ def update_location(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    location = crud.get_location(db, location_id, user_id=current_user.id)
+    location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     updated = crud.update_location(db, location, location_in)
@@ -262,7 +320,7 @@ def get_location_totes(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    location = crud.get_location(db, location_id, user_id=current_user.id)
+    location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
         raise HTTPException(status_code=404, detail="Location not found")
     return location.totes
@@ -283,7 +341,7 @@ async def create_item(
     current_user: models.User = Depends(security.get_current_active_user),
 ):
     # Validate tote exists
-    tote = crud.get_tote(db, tote_id, user_id=current_user.id)
+    tote = crud.get_tote(db, tote_id, account_id=current_user.account_id)
     if not tote:
         raise HTTPException(status_code=404, detail="Tote not found")
 
@@ -311,7 +369,7 @@ async def all_items(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    rows = crud.list_items(db, current_user.id)
+    rows = crud.list_items(db, current_user.account_id)
     out = []
     for r in rows:
         checkout_info = {
@@ -341,7 +399,7 @@ async def items_in_tote(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    rows = crud.list_items_in_tote_by_id(db, tote_id)
+    rows = crud.list_items_in_tote(db, tote_id, current_user.account_id)
     out = []
     for r in rows:
         out.append({
@@ -365,7 +423,7 @@ async def update_item(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    item = crud.get_item(db, item_id, user_id=current_user.id)
+    item = crud.get_item(db, item_id, current_user.account_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
@@ -398,7 +456,7 @@ async def delete_item(
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
 ):
-    item = crud.get_item(db, item_id, user_id=current_user.id)
+    item = crud.get_item(db, item_id, current_user.account_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     crud.delete_item(db, item)
@@ -414,7 +472,7 @@ async def delete_item_image(
     """Remove an item's associated image file and clear its image_path.
     Leaves the item record intact.
     """
-    item = crud.get_item(db, item_id, user_id=current_user.id)
+    item = crud.get_item(db, item_id, current_user.account_id)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     if item.image_path:
@@ -442,7 +500,7 @@ async def checkout_item(
     current_user: models.User = Depends(security.get_current_active_user),
 ):
     """Check out an item to the current user."""
-    checkout = crud.checkout_item(db, item_id, current_user.id)
+    checkout = crud.checkout_item(db, item_id, current_user)
     if not checkout:
         raise HTTPException(
             status_code=400, 
@@ -458,7 +516,7 @@ async def checkin_item(
     current_user: models.User = Depends(security.get_current_active_user),
 ):
     """Check in an item (remove from checked out list)."""
-    success = crud.checkin_item(db, item_id, current_user.id)
+    success = crud.checkin_item(db, item_id, current_user)
     if not success:
         raise HTTPException(
             status_code=400,
@@ -473,4 +531,14 @@ async def get_checked_out_items(
     current_user: models.User = Depends(security.get_current_active_user),
 ):
     """Get all items checked out from totes owned by the current user."""
-    return crud.get_checked_out_items(db, current_user.id)
+    return crud.get_checked_out_items(db, current_user.account_id)
+
+
+@app.get("/statistics", response_model=schemas.StatisticsOut, tags=["statistics"])
+async def get_statistics(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    """Get summary statistics for the current user's inventory."""
+    stats = crud.get_statistics(db, current_user.account_id)
+    return schemas.StatisticsOut(**stats)

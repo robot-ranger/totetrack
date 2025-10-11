@@ -44,7 +44,7 @@ class LocationUpdate(BaseModel):
 
 class LocationOut(LocationBase):
     id: str
-    user_id: str
+    account_id: str
 
     class Config:
         from_attributes = True
@@ -68,7 +68,7 @@ class ToteUpdate(ToteBase):
 class ToteOut(ToteBase):
     id: str = Field(description="UUID string")
     items: List[ItemOut] = []
-    user_id: str | None = None
+    account_id: str | None = None
     location_obj: Optional[LocationOut] = None
 
     class Config:
@@ -89,7 +89,6 @@ class UserCreate(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
     password: str
-    is_superuser: bool = False
 
 
 class UserUpdate(BaseModel):
@@ -101,6 +100,7 @@ class UserUpdate(BaseModel):
 
 class UserOut(UserBase):
     id: str
+    account_id: str
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
@@ -149,3 +149,37 @@ class ItemWithCheckoutStatus(ItemOut):
 
     class Config:
         from_attributes = True
+
+
+class StatisticsOut(BaseModel):
+    locations_count: int
+    totes_count: int
+    items_count: int
+    checked_out_items_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class AccountBase(BaseModel):
+    name: str
+
+
+class AccountCreate(AccountBase):
+    owner_email: EmailStr
+    owner_full_name: Optional[str] = None
+    owner_password: str
+
+
+class AccountOut(AccountBase):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AccountBootstrapResponse(BaseModel):
+    account: AccountOut
+    superuser: UserOut

@@ -3,8 +3,8 @@ import { listTotes } from '../api'
 import type { Tote } from '../types'
 import ToteForm from '../components/ToteForm'
 import ToteTable from '../components/ToteTable'
-import ItemsPage from './ItemsPage'
-import { Box, Heading, Stack, Button, Text, useDisclosure, HStack, Input, Spacer, SegmentGroup, VStack, Flex, Link } from '@chakra-ui/react'
+import StatisticsCards from '../components/StatisticsCards'
+import { Box, Heading, Stack, Button, Text, useDisclosure, HStack, Input, VStack, Flex } from '@chakra-ui/react'
 import { FiX } from 'react-icons/fi'
 
 
@@ -41,6 +41,7 @@ export default function TotesPage() {
             <Heading fontSize="xl" fontWeight="bold">
                 Totes
             </Heading>
+            <StatisticsCards />
             {open && (
                 <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1000}>
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">

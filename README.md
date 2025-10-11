@@ -1,6 +1,6 @@
 # ToteTrack
 
-Inventory & tote tracking with fast item capture, QR labels, and mobile-friendly scanning.
+Inventory & tote tracking with fast item capture, QR labels, multi-account isolation, and mobile-friendly scanning.
 
 
 ## Overview
@@ -15,10 +15,11 @@ Authenticated users now have a responsive navigation sidebar (desktop) / hamburg
 The top bar now only includes utility actions: color mode toggle, CSV export, Profile (opens modal), and Logout. The Profile modal lets you update your full name and password (email is read-only). Changes refresh the in-memory user context automatically.
 
 ### Core Features
+- Isolated "accounts" with a dedicated superuser and scoped sub-accounts
 - Create / delete totes with name, location, description, arbitrary metadata JSON
 - Add/update/remove items (name, quantity, description, image upload)
 - Image storage on disk served via `/media/*`
-- Fast search across all items
+- Fast search across all totes within the signed-in account
 - QR label component for easy printing
 - Mobile camera QR scanning (secure context aware)
 
@@ -61,6 +62,7 @@ Follow these 4 steps (requested flow):
 3. Launch backend (FastAPI) in debug / auto-reload
 	```bash
 	cd backend/
+	rm -f totes.db                # schema changes? purge instead of migrate
 	uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 	```
 	Docs: http://localhost:8000/docs  |  OpenAPI JSON: http://localhost:8000/openapi.json
@@ -77,17 +79,23 @@ You now have:
 ## API Snapshot
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | /totes | Create tote |
-| GET | /totes | List totes |
-| GET | /totes/{id} | Get tote detail (includes items) |
+| POST | /accounts | Bootstrap a new account + superuser |
+| POST | /auth/token | Login (JWT) |
+| GET | /users | List account users (superuser only) |
+| POST | /users | Create sub-account (superuser only) |
+| POST | /totes | Create tote (scoped to current account) |
+| GET | /totes | List totes for current account |
+| GET | /totes/{id} | Get tote detail (account-scoped) |
 | DELETE | /totes/{id} | Delete tote |
 | POST | /totes/{id}/items | Create item (multipart form, optional image) |
-| GET | /items | List all items |
+| GET | /items | List all items for current account |
 | GET | /totes/{id}/items | Items in one tote |
 | PUT | /items/{item_id} | Update item (fields + optional new image) |
 | DELETE | /items/{item_id} | Delete item |
 
 Image URLs in responses (if present) are relative (e.g. `/media/filename.jpg`).
+
+> **Account model**: each account is created via `/accounts` and automatically receives exactly one superuser. That superuser can invite additional sub-accounts but cannot create a second superuser; the platform enforces one-superuser-per-account to keep ownership clear. All totes, locations, and items are scoped to the authenticated account ID.
 
 ### Example Tote (response)
 ```json
@@ -146,7 +154,7 @@ frontend/scripts/   # Dev certificate helper
 
 ---
 ## Roadmap (ideas)
-- Auth / multi-user separation
+- Account billing / usage limits
 - Bulk import & export (CSV / JSON)
 - Tagging & advanced search filters
 - Object storage backend for images (S3 / Supabase)

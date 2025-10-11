@@ -1,6 +1,6 @@
 // frontend/src/api.ts
 import axios from 'axios'
-import type { Tote, Item, User, Location, CheckedOutItem, ItemWithCheckoutStatus } from './types'
+import type { Tote, Item, User, Location, CheckedOutItem, ItemWithCheckoutStatus, Statistics, Account } from './types'
 
 // Allow overriding via Vite env; falls back to Vite dev proxy ("/api")
 const baseURL = import.meta.env.VITE_API_BASE ?? '/api'
@@ -35,6 +35,25 @@ export async function getMe(): Promise<User> {
 
 export async function logoutServer(): Promise<{ message: string }> {
     const { data } = await http.post<{ message: string }>('/auth/logout')
+    return data
+}
+
+// ——— Accounts ———
+
+export type AccountBootstrapPayload = {
+    name: string
+    owner_email: string
+    owner_full_name?: string
+    owner_password: string
+}
+
+export type AccountBootstrapResponse = {
+    account: Account
+    superuser: User
+}
+
+export async function bootstrapAccount(payload: AccountBootstrapPayload): Promise<AccountBootstrapResponse> {
+    const { data } = await http.post<AccountBootstrapResponse>('/accounts', payload)
     return data
 }
 
@@ -197,7 +216,6 @@ export type CreateUserForm = {
     email: string
     full_name?: string
     password: string
-    is_superuser?: boolean
 }
 
 export async function createUser(form: CreateUserForm): Promise<User> {
@@ -205,7 +223,6 @@ export async function createUser(form: CreateUserForm): Promise<User> {
         email: form.email,
         full_name: form.full_name || null,
         password: form.password,
-        is_superuser: form.is_superuser || false,
     }
     const { data } = await http.post<User>('/users', body)
     return data
@@ -246,5 +263,12 @@ export async function checkinItem(itemId: string): Promise<{ message: string }> 
 
 export async function fetchCheckedOutItems(): Promise<CheckedOutItem[]> {
     const { data } = await http.get<CheckedOutItem[]>('/checked-out-items')
+    return data
+}
+
+// ——— Statistics ———
+
+export async function getStatistics(): Promise<Statistics> {
+    const { data } = await http.get<Statistics>('/statistics')
     return data
 }

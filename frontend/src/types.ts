@@ -13,7 +13,7 @@ export interface Location {
     id: string
     name: string
     description?: string | null
-    user_id: string
+    account_id: string
 }
 
 export interface Tote {
@@ -25,6 +25,7 @@ export interface Tote {
     metadata_json?: string | null
     description?: string | null
     items: Item[]
+    account_id?: string | null
 }
 
 export interface User {
@@ -33,6 +34,7 @@ export interface User {
     full_name?: string | null
     is_active: boolean
     is_superuser: boolean
+    account_id: string
     created_at?: string | null
     updated_at?: string | null
 }
@@ -50,4 +52,18 @@ export interface ItemWithCheckoutStatus extends Item {
     is_checked_out: boolean
     checked_out_by?: User | null
     checked_out_at?: string | null
+}
+
+export interface Statistics {
+    locations_count: number
+    totes_count: number
+    items_count: number
+    checked_out_items_count: number
+}
+
+export interface Account {
+    id: string
+    name: string
+    created_at: string
+    updated_at: string
 }
