@@ -13,9 +13,9 @@
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@yudiel/react-qr-scanner": "^1.0.7",
-    "@chakra-ui/cli": "^3.27.1",
     "axios": "^1.7.7",
     "framer-motion": "^11.2.10",
+    "jszip": "^3.10.1",
     "qrcode.react": "^3.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -27,6 +27,7 @@
     "@types/react": "^18.2.74",
     "@types/react-dom": "^18.2.24",
     "@vitejs/plugin-react": "^4.3.2",
+    "@chakra-ui/cli": "^3.27.1",
     "typescript": "^5.6.2",
     "vite": "^5.4.6"
   }
