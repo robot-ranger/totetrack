@@ -10,9 +10,14 @@ import {
     HStack,
     Badge,
     Alert,
-    Heading
+    Heading,
+    IconButton,
+    Menu,
+    Portal
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
+import { FiMoreVertical, FiLogIn, FiTrash } from 'react-icons/fi'
+import { deleteItem } from '../api'
 
 
 export default function CheckedOutItemsPage() {
@@ -43,6 +48,19 @@ export default function CheckedOutItemsPage() {
         } catch (err) {
             console.error('Failed to check in item:', err)
             setError('Failed to check in item')
+        }
+    }
+
+    const handleDeleteLost = async (itemId: string) => {
+        const confirmed = window.confirm('Delete this item as lost? This action cannot be undone.')
+        if (!confirmed) return
+        try {
+            await deleteItem(itemId)
+            console.log('Item deleted as lost')
+            loadCheckedOutItems()
+        } catch (err) {
+            console.error('Failed to delete item:', err)
+            setError('Failed to delete item')
         }
     }
 
@@ -130,13 +148,37 @@ export default function CheckedOutItemsPage() {
                                     </Text>
                                 </Table.Cell>
                                 <Table.Cell>
-                                    <Button
-                                        size="sm"
-                                        colorScheme="green"
-                                        onClick={() => handleCheckin(checkout.item_id)}
-                                    >
-                                        Check In
-                                    </Button>
+                                    {/* Actions menu */}
+                                    {(() => {
+                                        const M = Menu as any
+                                        return (
+                                            <M.Root>
+                                                <M.Trigger asChild>
+                                                    <IconButton
+                                                        size="xs"
+                                                        variant="ghost"
+                                                        aria-label="Item actions"
+                                                    >
+                                                        <FiMoreVertical />
+                                                    </IconButton>
+                                                </M.Trigger>
+                                                <Portal>
+                                                    <M.Positioner>
+                                                        <M.Content>
+                                                            <M.Item value="checkin" onClick={() => handleCheckin(checkout.item_id)}>
+                                                                <FiLogIn />
+                                                                Check In
+                                                            </M.Item>
+                                                            <M.Item value="delete" onClick={() => handleDeleteLost(checkout.item_id)}>
+                                                                <FiTrash />
+                                                                Delete (Lost)
+                                                            </M.Item>
+                                                        </M.Content>
+                                                    </M.Positioner>
+                                                </Portal>
+                                            </M.Root>
+                                        )
+                                    })()}
                                 </Table.Cell>
                             </Table.Row>
                         ))}

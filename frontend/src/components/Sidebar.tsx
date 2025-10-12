@@ -1,6 +1,6 @@
 import { Box, VStack, HStack, Text, Icon, useBreakpointValue, IconButton, Drawer, Image, Heading, Button, Separator, Badge } from '@chakra-ui/react'
 import { NavLink } from 'react-router-dom'
-import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin } from 'react-icons/fi'
+import { FiArchive, FiTag, FiUsers, FiMenu, FiX, FiChevronLeft, FiChevronRight, FiLogOut, FiUser, FiMapPin, FiCheckSquare } from 'react-icons/fi'
 import { LuPackageMinus } from 'react-icons/lu'
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '../auth'
@@ -70,7 +70,7 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
     { to: '/locations', label: 'Locations', icon: FiMapPin, count: counts.locations },
     { to: '/', label: 'Totes', icon: FiArchive, count: counts.totes },
     { to: '/items', label: 'Items', icon: FiTag, count: counts.items },
-    { to: '/checked-out', label: 'Checked Out', icon: LuPackageMinus, count: counts.checkedOut },
+    { to: '/checked-out', label: 'Checked Out', icon: FiCheckSquare, count: counts.checkedOut },
   ]
   if (user?.is_superuser) {
     links.push({ to: '/users', label: 'Users', icon: FiUsers, count: counts.users })
