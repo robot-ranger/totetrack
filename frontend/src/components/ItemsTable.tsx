@@ -48,7 +48,7 @@ export default function ItemsTable({
       <Table.Root size="sm" variant="line">
         <Table.Header>
           <Table.Row>
-            <Table.ColumnHeader>Item</Table.ColumnHeader>
+            <Table.ColumnHeader>Name</Table.ColumnHeader>
             <Table.ColumnHeader w="80px" textAlign="end">Qty</Table.ColumnHeader>
             <Table.ColumnHeader w="120px">Status</Table.ColumnHeader>
             {showToteColumn && <Table.ColumnHeader>Tote</Table.ColumnHeader>}

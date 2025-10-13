@@ -81,7 +81,11 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
     <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1600}>
       <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '720px' }} p={4} boxShadow="lg">
         <HStack justifyContent="space-between" mb={3}>
-          <Heading size="md">Move "{item.name}" to Tote</Heading>
+          <Heading size="md">{`${tab === 'existing'
+            ? `Move "${item.name}" to ${selectedTote?.name || selectedTote?.id.slice(-6) || '...'}`
+            : tab === 'new'
+            ? 'Create a new tote'
+            : `Remove "${item.name}" from Tote`}`}</Heading>
           <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
         </HStack>
 
@@ -89,10 +93,13 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
           <T.List>
             <T.Trigger value="existing">Existing Tote</T.Trigger>
             <T.Trigger value="new">New Tote</T.Trigger>
-            <T.Trigger value="remove">Remove From Tote</T.Trigger>
+            <T.Trigger value="remove" disabled={!item.tote_id}>Remove From Tote</T.Trigger>
           </T.List>
 
           <T.Content value="existing">
+            <VStack alignItems="stretch" gap={3} mt={3}>
+            <Text mx='auto'>{`Move "${item.name}" to ${selectedTote?.name || selectedTote?.id.slice(-6) || '...'}`}</Text>
+
             <Input mb={4} placeholder="Search totes…" value={q} onChange={e => setQ(e.target.value)} />
             <Table.ScrollArea maxH="360px">
               <Table.Root size="sm" variant="outline">
@@ -135,11 +142,12 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
                 {selectedTote ? `Move to ${selectedTote.name || selectedTote.id.slice(-6)}` : 'Move to Tote'}
               </Button>
             </HStack>
+            </VStack>
           </T.Content>
 
           <T.Content value="new">
             <VStack alignItems="stretch" gap={3} mt={3}>
-              <Text>Create a new tote, then we’ll move the item into it automatically.</Text>
+              <Text mx='auto'>{`Create a new tote and move "${item.name}" into it`}</Text>
               <ToteForm onCreated={handleCreatedTote} />
             </VStack>
           </T.Content>
@@ -147,7 +155,7 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
           <T.Content value="remove">
             <VStack alignItems="stretch" gap={3} mt={3}>
               <Text>
-                {item.tote_id ? 'Remove this item from its current tote.' : 'This item is not currently in a tote.'}
+                {item.tote_id && `Remove "${item.name}" from its current tote.`}
               </Text>
               <HStack justifyContent="flex-end" gap={2}>
                 <Button variant="outline" onClick={onClose}>Cancel</Button>
