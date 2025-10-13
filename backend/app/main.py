@@ -63,6 +63,9 @@ def init_superuser():
                 print(f"[startup] Failed to create initial account: {exc}")
 
 
+    # Purge mode: no automatic migrations. Ensure a clean DB by deleting the SQLite file before starting the app.
+
+
 # Auth & Users
 
 
@@ -327,10 +330,39 @@ def get_location_totes(
 
 
 # Items
+@app.post("/items", response_model=schemas.ItemOut, tags=["items"])
+async def create_item_without_tote(
+    name: str = Form(...),
+    quantity: int = Form(1),
+    description: str | None = Form(None),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_user),
+):
+    """Create an item not associated with any tote (orphan item)."""
+    image_path = None
+    if image is not None:
+        ext = (image.filename or "bin").split(".")[-1].lower()
+        safe_name = image_store.sanitize_filename(name)
+        dest = f"orphan_item_{safe_name}.{ext}"
+        image_path = image_store.save_image(image.file, dest)
+
+    created = crud.add_item(db, current_user.account_id, schemas.ItemCreate(
+        name=name, description=description, quantity=quantity
+    ), tote_id=None, image_path=image_path)
+
+    return schemas.ItemOut.model_validate({
+        "id": created.id,
+        "name": created.name,
+        "description": created.description,
+        "quantity": created.quantity,
+        "image_url": f"/media/{image_path.split('/')[-1]}" if image_path else None,
+        "tote_id": None,
+    })
 
 
 @app.post("/totes/{tote_id}/items", response_model=schemas.ItemOut, tags=["items"])
-async def create_item(
+async def create_item_in_tote(
     tote_id: str,
     # Explicitly declare form fields so FastAPI reads them from multipart/form-data
     name: str = Form(...),
@@ -352,8 +384,8 @@ async def create_item(
         dest = f"tote_{tote_id}_item_{safe_name}.{ext}"
         image_path = image_store.save_image(image.file, dest)
 
-    created = crud.add_item(db, tote_id, schemas.ItemCreate(
-        name=name, description=description, quantity=quantity), image_path)
+    created = crud.add_item(db, current_user.account_id, schemas.ItemCreate(
+        name=name, description=description, quantity=quantity), tote_id=tote_id, image_path=image_path)
     return schemas.ItemOut.model_validate({
         "id": created.id,
         "name": created.name,
@@ -419,6 +451,7 @@ async def update_item(
     name: str | None = Form(None),
     quantity: int | None = Form(None),
     description: str | None = Form(None),
+    tote_id: str | None = Form(None),
     image: UploadFile | None = File(None),
     db: Session = Depends(get_session),
     current_user: models.User = Depends(security.get_current_active_user),
@@ -427,11 +460,25 @@ async def update_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    # Handle moving item between totes if tote_id explicitly provided
+    if tote_id is not None:
+        if tote_id == "":
+            # Allow clearing tote association by sending empty string
+            item.tote_id = None
+        else:
+            tote = crud.get_tote(db, tote_id, account_id=current_user.account_id)
+            if not tote:
+                raise HTTPException(status_code=404, detail="Tote not found")
+            item.tote_id = tote_id
+        db.add(item)
+        # don't commit yet; crud.update_item will commit below
+
     image_path = None
     if image is not None:
         ext = (image.filename or "bin").split(".")[-1].lower()
         safe_name = image_store.sanitize_filename(name or item.name)
-        dest = f"tote_{item.tote_id}_item_{safe_name}_{item.id}.{ext}"
+        dest_prefix = f"tote_{item.tote_id}_" if item.tote_id else "orphan_"
+        dest = f"{dest_prefix}item_{safe_name}_{item.id}.{ext}"
         image_path = image_store.save_image(image.file, dest)
 
     updated = crud.update_item(db, item, schemas.ItemUpdate(

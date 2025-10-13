@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react'
-import { addItem, updateItem, deleteItem, removeItemPhoto } from '../api'
+import { addItem, updateItem, deleteItem, removeItemPhoto, createItem } from '../api'
 import type { Item } from '../types'
-import { Button, Grid, GridItem, Input, Textarea, Box, Flex, Heading, Text, FileUpload, IconButton } from '@chakra-ui/react'
+import { Button, Grid, GridItem, Input, Textarea, Box, Flex, Heading, Text, FileUpload, IconButton, HStack } from '@chakra-ui/react'
 import type React from 'react'
 import { FiUpload } from 'react-icons/fi'
+import { LuWandSparkles } from 'react-icons/lu'
 
 
 interface ItemFormProps {
-    toteId: string
+    toteId?: string
     onCreated?: (i: Item) => void
     existing?: Item | null
     onUpdated?: (i: Item) => void
@@ -39,7 +40,9 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                 const updated = await updateItem(existing.id, { name, quantity, description, imageFile: file })
                 onUpdated?.(updated)
             } else {
-                const created = await addItem(toteId, { name, quantity, description, imageFile: file })
+                const created = toteId
+                    ? await addItem(toteId, { name, quantity, description, imageFile: file })
+                    : await createItem({ name, quantity, description, imageFile: file })
                 onCreated?.(created)
                 setName(''); setQty(1); setDesc(''); setFile(null)
             }
@@ -99,6 +102,7 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                                 <FiUpload />
                                 Select image
                             </IconButton>
+                            
                             <FileUpload.List />
                         </FileUpload.Root>
                     </Box>
@@ -106,7 +110,13 @@ export default function ItemForm({ toteId, onCreated, existing, onUpdated, onDel
                 <GridItem colSpan={2}>
                     <Box display="grid" gap={1}>
                         <Box as="label" fontSize="sm" fontWeight="medium">Description</Box>
-                        <Textarea value={description} onChange={e => setDesc(e.target.value)} />
+                        <HStack gap={2} mb={1}>
+                            <Textarea value={description} onChange={e => setDesc(e.target.value)} />
+                            <IconButton variant="outline" h={'full'} px={2} onClick={() => console.log('AI upload not implemented yet')} ml={2}>
+                                <LuWandSparkles />
+                                AI
+                            </IconButton>
+                        </HStack>
                     </Box>
                 </GridItem>
                 <GridItem colSpan={2}>

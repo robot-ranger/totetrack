@@ -107,6 +107,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                             onCheckin={handleCheckin}
                             showToteColumn={false}
                             showLocationColumn={false}
+                            onMoved={load}
                         />
                     )}
                 </>

@@ -158,8 +158,9 @@ def update_location(db: Session, location: models.Location, upd: schemas.Locatio
 # Items
 
 
-def add_item(db: Session, tote_id: str, item: schemas.ItemCreate, image_path: str | None = None):
+def add_item(db: Session, account_id: str, item: schemas.ItemCreate, tote_id: str | None = None, image_path: str | None = None):
     i = models.Item(
+        account_id=account_id,
         tote_id=tote_id,
         name=item.name,
         description=item.description,
@@ -173,30 +174,20 @@ def add_item(db: Session, tote_id: str, item: schemas.ItemCreate, image_path: st
 
 
 def list_items(db: Session, account_id: str):
-    return (
-        db.query(models.Item)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Tote.account_id == account_id)
-        .all()
-    )
+    # Include orphan items (no tote) by filtering on item.account_id
+    return db.query(models.Item).filter(models.Item.account_id == account_id).all()
 
 
 def list_items_in_tote(db: Session, tote_id: str, account_id: str):
     return (
         db.query(models.Item)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Item.tote_id == tote_id, models.Tote.account_id == account_id)
+        .filter(models.Item.tote_id == tote_id, models.Item.account_id == account_id)
         .all()
     )
 
 
 def get_item(db: Session, item_id: str, account_id: str):
-    return (
-        db.query(models.Item)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Item.id == item_id, models.Tote.account_id == account_id)
-        .first()
-    )
+    return db.query(models.Item).filter(models.Item.id == item_id, models.Item.account_id == account_id).first()
 
 
 def update_item(db: Session, item: models.Item, upd: schemas.ItemUpdate, image_path: str | None = None):
@@ -400,20 +391,14 @@ def get_checked_out_items(db: Session, account_id: str) -> list[models.CheckedOu
     return (
         db.query(models.CheckedOutItem)
         .join(models.Item, models.CheckedOutItem.item_id == models.Item.id)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Tote.account_id == account_id)
+        .filter(models.Item.account_id == account_id)
         .all()
     )
 
 
 def get_item_with_checkout_status(db: Session, item_id: str, account_id: str) -> models.Item | None:
     """Get an item with its checkout information."""
-    return (
-        db.query(models.Item)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Item.id == item_id, models.Tote.account_id == account_id)
-        .first()
-    )
+    return db.query(models.Item).filter(models.Item.id == item_id, models.Item.account_id == account_id).first()
 
 
 def get_statistics(db: Session, account_id: str) -> dict:
@@ -421,20 +406,14 @@ def get_statistics(db: Session, account_id: str) -> dict:
     locations_count = db.query(models.Location).filter(models.Location.account_id == account_id).count()
     totes_count = db.query(models.Tote).filter(models.Tote.account_id == account_id).count()
     
-    # Count items in totes owned by this user
-    items_count = (
-        db.query(models.Item)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Tote.account_id == account_id)
-        .count()
-    )
+    # Count items owned by this user
+    items_count = db.query(models.Item).filter(models.Item.account_id == account_id).count()
     
     # Count checked out items for this user
     checked_out_items_count = (
         db.query(models.CheckedOutItem)
         .join(models.Item, models.CheckedOutItem.item_id == models.Item.id)
-        .join(models.Tote, models.Item.tote_id == models.Tote.id)
-        .filter(models.Tote.account_id == account_id)
+        .filter(models.Item.account_id == account_id)
         .count()
     )
     

@@ -165,6 +165,18 @@ export async function addItem(toteId: string, form: AddItemForm): Promise<Item> 
     return data
 }
 
+export async function createItem(form: AddItemForm): Promise<Item> {
+    const fd = new FormData()
+    fd.set('name', form.name)
+    fd.set('quantity', String(form.quantity ?? 1))
+    if (form.description) fd.set('description', form.description)
+    if (form.imageFile) fd.set('image', form.imageFile)
+    const { data } = await http.post<Item>(`/items`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+}
+
 export async function listItems(): Promise<ItemWithCheckoutStatus[]> {
     const { data } = await http.get<ItemWithCheckoutStatus[]>('/items')
     return data
@@ -180,6 +192,7 @@ export type UpdateItemForm = {
     quantity?: number
     description?: string | null
     imageFile?: File | null
+    tote_id?: string | null
 }
 
 export async function updateItem(itemId: string, form: UpdateItemForm): Promise<Item> {
@@ -187,6 +200,7 @@ export async function updateItem(itemId: string, form: UpdateItemForm): Promise<
     if (form.name !== undefined) fd.set('name', form.name)
     if (form.quantity !== undefined) fd.set('quantity', String(form.quantity))
     if (form.description !== undefined && form.description !== null) fd.set('description', form.description)
+    if (form.tote_id !== undefined) fd.set('tote_id', form.tote_id ?? '')
     if (form.imageFile) fd.set('image', form.imageFile)
     const { data } = await http.put<Item>(`/items/${itemId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } })
     return data

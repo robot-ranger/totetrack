@@ -70,3 +70,7 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **UI System**: `frontend/src/components/ui/provider.tsx` - Chakra v3 setup
 - **Backend Models**: `backend/app/models.py` - SQLAlchemy ORM
 - **API Routes**: `backend/app/main.py` - FastAPI endpoints
+
+## Misc Minutiae
+- **Chakra UI v3**: Use new API, avoid deprecated patterns
+- **gap not spacing**: Chakra v3 uses `gap` instead of `spacing` in layout components
