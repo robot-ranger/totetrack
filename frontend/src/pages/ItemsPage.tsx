@@ -4,7 +4,7 @@ import type { ItemWithCheckoutStatus, Tote } from '../types'
 import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link, Button, Image, Stack, Menu, IconButton, Checkbox } from '@chakra-ui/react'
 import ItemsTable from '../components/ItemsTable'
 import ItemForm from '../components/ItemForm'
-import { FiX, FiFilter } from 'react-icons/fi'
+import { FiX, FiFilter, FiChevronDown } from 'react-icons/fi'
 import { useColorMode } from '../components/ui/color-mode'
 
 
@@ -116,7 +116,7 @@ export default function ItemsPage() {
                     <Text textStyle='sm' display={{base: 'none',md:'block'}}>Filter:</Text>
                     <M.Root>
                         <M.Trigger asChild>
-                            <IconButton variant="outline"><FiFilter /></IconButton>
+                            <IconButton variant="outline" px={2}><FiFilter /> | <FiChevronDown /></IconButton>
                         </M.Trigger>
                         <Portal>
                             <M.Positioner>
@@ -204,7 +204,7 @@ export default function ItemsPage() {
                     <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '640px' }} p={4} boxShadow="lg">
                         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                             <Heading size="md">Edit Item</Heading>
-                            <Button size="sm" variant="ghost" onClick={() => setEditModalOpen(false)}><FiX /></Button>
+                            <IconButton size="sm" variant="ghost" onClick={() => setEditModalOpen(false)}><FiX /></IconButton>
                         </Box>
                         {editingItem.image_url && (
                             <Box mb={4} display="flex" justifyContent="center">

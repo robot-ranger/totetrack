@@ -3,6 +3,7 @@ import { Box, Button, HStack, Heading, Input, Table, Text, VStack, Tabs } from '
 import type { ItemWithCheckoutStatus, Tote } from '../types'
 import { listTotes, updateItem } from '../api'
 import ToteForm from './ToteForm'
+import { FiArchive, FiPlus, FiUpload } from 'react-icons/fi'
 
 // Temporary alias to relax Tabs typings similar to other components in this project
 const T = Tabs as any
@@ -81,25 +82,22 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
     <Box position="fixed" inset={0} bg="blackAlpha.600" display="flex" alignItems="flex-start" justifyContent="center" pt={24} zIndex={1600}>
       <Box bg="bg.canvas" borderRadius="md" borderWidth="1px" minW={{ base: '90%', md: '720px' }} p={4} boxShadow="lg">
         <HStack justifyContent="space-between" mb={3}>
-          <Heading size="md">{`${tab === 'existing'
-            ? `Move "${item.name}" to ${selectedTote?.name || selectedTote?.id.slice(-6) || '...'}`
-            : tab === 'new'
-            ? 'Create a new tote'
+          <Heading size="md">{`${tab === 'existing' || tab === 'new'
+            ? `Move "${item.name}" to :`
             : `Remove "${item.name}" from Tote`}`}</Heading>
           <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>
         </HStack>
 
         <T.Root value={tab} onValueChange={(d: any) => setTab(d.value)}>
           <T.List>
-            <T.Trigger value="existing">Existing Tote</T.Trigger>
-            <T.Trigger value="new">New Tote</T.Trigger>
-            <T.Trigger value="remove" disabled={!item.tote_id}>Remove From Tote</T.Trigger>
+            <T.Trigger value="existing"><FiArchive /> Existing Tote</T.Trigger>
+            <T.Trigger value="new"><FiPlus /> New Tote</T.Trigger>
+            <T.Trigger value="remove" disabled={!item.tote_id}><FiUpload /> Remove From Tote</T.Trigger>
           </T.List>
 
           <T.Content value="existing">
             <VStack alignItems="stretch" gap={3} mt={3}>
-            <Text mx='auto'>{`Move "${item.name}" to ${selectedTote?.name || selectedTote?.id.slice(-6) || '...'}`}</Text>
-
+            <Text color={'fg.subtle'}>{`Move "${item.name}" to :`}</Text>
             <Input mb={4} placeholder="Search totes…" value={q} onChange={e => setQ(e.target.value)} />
             <Table.ScrollArea maxH="360px">
               <Table.Root size="sm" variant="outline">
@@ -147,15 +145,16 @@ export default function MoveToToteModal({ item, isOpen, onClose, onMoved }: Move
 
           <T.Content value="new">
             <VStack alignItems="stretch" gap={3} mt={3}>
-              <Text mx='auto'>{`Create a new tote and move "${item.name}" into it`}</Text>
+              <Text color={'fg.subtle'}>{`Create a new tote and move "${item.name}" into it`}</Text>
               <ToteForm onCreated={handleCreatedTote} />
             </VStack>
           </T.Content>
 
           <T.Content value="remove">
             <VStack alignItems="stretch" gap={3} mt={3}>
-              <Text>
-                {item.tote_id && `Remove "${item.name}" from its current tote.`}
+              <Text color={'fg.subtle'}>
+                {item.tote_id && `Remove "${item.name}" from its current tote. `}
+                 It will no longer be associated with a tote.
               </Text>
               <HStack justifyContent="flex-end" gap={2}>
                 <Button variant="outline" onClick={onClose}>Cancel</Button>
