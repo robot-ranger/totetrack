@@ -168,7 +168,7 @@ export function Sidebar({ width = 220, mobileOpen, onMobileOpenChange, hideHambu
         <VStack align="stretch" gap={2}>
           {!isCollapsed && <Text fontWeight="medium" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.full_name || user.email}</Text>}
           <HStack gap={2} justify={isCollapsed ? 'center' : 'end'}>
-            {onProfile && !isCollapsed && <Button aria-label="Profile" px={2} size="xs" variant={isCollapsed ? 'ghost' : 'surface'} colorPalette={"yellow"} onClick={onProfile}>{/* icon fallback */}<FiUser /> My Profile</Button>}
+            {onProfile && !isCollapsed && <Button aria-label="Profile" px={2} size="xs" variant={isCollapsed ? 'ghost' : 'surface'} onClick={onProfile}>{/* icon fallback */}<FiUser /> My Profile</Button>}
             <Button size="xs" variant={isCollapsed ? 'solid' : 'outline'} colorPalette="red" onClick={onLogout}><FiLogOut />{!isCollapsed && <Text ml={2}>Logout</Text>}</Button>
           </HStack>
         </VStack>

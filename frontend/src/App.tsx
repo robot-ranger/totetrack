@@ -175,7 +175,7 @@ export default function App() {
     // Authenticated routes
     return (
         <SidebarRefreshProvider>
-            <Box display="flex" minH="100vh">
+            <Box display="flex" minH="100vh" colorPalette={'purple'}>
                 <Sidebar
                     width={sidebarWidth}
                     mobileOpen={navOpen}

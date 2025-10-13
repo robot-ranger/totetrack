@@ -120,7 +120,7 @@ function TierCard(t: Tier) {
       <List.Root mb={8} gap={3}>
         {t.features.map(f => (
           <List.Item key={f} display="flex" gap={3}>
-            <Icon color={t.highlight ? 'yellow.500' : 'green.500'}><FiCheck /></Icon>
+            <Icon as={FiCheck} color={t.highlight ? 'yellow.500' : 'green.500'} />
             <Text fontSize="sm">{f}</Text>
           </List.Item>
         ))}

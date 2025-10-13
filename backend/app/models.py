@@ -51,13 +51,17 @@ class Tote(Base):
 class Item(Base):
     __tablename__ = "items"
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    tote_id = Column(String, ForeignKey("totes.id"), nullable=False)
+    # When allowing items without a tote, tote_id can be null. Scope by account_id for isolation.
+    tote_id = Column(String, ForeignKey("totes.id"), nullable=True, index=True)
+    account_id = Column(String, ForeignKey("accounts.id"), nullable=False, index=True)
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     quantity = Column(Integer, nullable=False, default=1)
     image_path = Column(String, nullable=True)  # stored relative to /media
 
     tote = relationship("Tote", back_populates="items")
+    # Optional: backref to account not strictly needed elsewhere
+    # account = relationship("Account")
     checkout = relationship("CheckedOutItem", back_populates="item", uselist=False, cascade="all, delete-orphan")
 
 
