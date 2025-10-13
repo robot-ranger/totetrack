@@ -111,44 +111,12 @@ export default function ItemsPage() {
                     <Input placeholder="Search items…" value={q} onChange={e => setQ(e.target.value)} /> 
                 </VStack>
 
-                <VStack alignItems="start" >
-                    <Text textStyle='sm'>Sort:</Text>
-                    <Cbx.Root
-                        collection={sortCollection}
-                        value={[sortKey as string]}
-                        onValueChange={(details: { value: string[] }) => {
-                            if (details.value?.[0]) setSortKey(details.value[0] as keyof ItemWithCheckoutStatus)
-                        }}
-                        width="48"
-                        selectionBehavior="replace"
-                        inputBehavior="autohighlight"
-                    >
-                        <Cbx.Control>
-                            <Cbx.Input placeholder="Sort by" />
-                            <Cbx.IndicatorGroup>
-                                <Cbx.ClearTrigger />
-                                <Cbx.Trigger />
-                            </Cbx.IndicatorGroup>
-                        </Cbx.Control>
-                        <Portal>
-                            <Cbx.Positioner>
-                                <Cbx.Content>
-                                    {sortItems.map((item) => (
-                                        <Cbx.Item key={item.value} item={item}>
-                                            {item.label}
-                                            <Cbx.ItemIndicator />
-                                        </Cbx.Item>
-                                    ))}
-                                </Cbx.Content>
-                            </Cbx.Positioner>
-                        </Portal>
-                    </Cbx.Root>
-                </VStack>
+                
                 <VStack alignItems="start">
-                    <Text textStyle='sm'>Filter:</Text>
+                    <Text textStyle='sm' display={{base: 'none',md:'block'}}>Filter:</Text>
                     <M.Root>
                         <M.Trigger asChild>
-                            <Button variant="outline"><FiFilter style={{ marginRight: 6 }} /> Filters</Button>
+                            <IconButton variant="outline"><FiFilter /></IconButton>
                         </M.Trigger>
                         <Portal>
                             <M.Positioner>
@@ -166,6 +134,41 @@ export default function ItemsPage() {
                                             <Chx.HiddenInput />
                                             <Chx.Label>Orphaned Only</Chx.Label>
                                         </Chx.Root>
+                                    </M.Item>
+                                    <M.Item closeOnSelect={false} >
+                                        <VStack alignItems="start" >
+                                            <Text textStyle='sm'>Sort:</Text>
+                                            <Cbx.Root
+                                                collection={sortCollection}
+                                                value={[sortKey as string]}
+                                                onValueChange={(details: { value: string[] }) => {
+                                                    if (details.value?.[0]) setSortKey(details.value[0] as keyof ItemWithCheckoutStatus)
+                                                }}
+                                                width="48"
+                                                selectionBehavior="replace"
+                                                inputBehavior="autohighlight"
+                                            >
+                                                <Cbx.Control>
+                                                    <Cbx.Input placeholder="Sort by" />
+                                                    <Cbx.IndicatorGroup>
+                                                        <Cbx.ClearTrigger />
+                                                        <Cbx.Trigger />
+                                                    </Cbx.IndicatorGroup>
+                                                </Cbx.Control>
+                                                <Portal>
+                                                    <Cbx.Positioner>
+                                                        <Cbx.Content>
+                                                            {sortItems.map((item) => (
+                                                                <Cbx.Item key={item.value} item={item}>
+                                                                    {item.label}
+                                                                    <Cbx.ItemIndicator />
+                                                                </Cbx.Item>
+                                                            ))}
+                                                        </Cbx.Content>
+                                                    </Cbx.Positioner>
+                                                </Portal>
+                                            </Cbx.Root>
+                                        </VStack>
                                     </M.Item>
                                 </M.Content>
                             </M.Positioner>
