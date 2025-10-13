@@ -20,7 +20,7 @@ const features = [
     desc: 'No arbitrary item caps. Organize as granularly as you like.'
   },
   {
-    title: 'CSV Export',
+    title: 'CSV Import & Export',
     icon: FiCloud,
     desc: 'Download your data anytime for reporting or offline backup.'
   },

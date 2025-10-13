@@ -83,6 +83,7 @@ class UserBase(BaseModel):
     full_name: Optional[str] = None
     is_active: bool = True
     is_superuser: bool = False
+    is_verified: bool = False
 
 
 class UserCreate(BaseModel):
@@ -125,6 +126,26 @@ class PasswordRecoveryInit(BaseModel):
 class PasswordRecoveryConfirm(BaseModel):
     token: str
     new_password: str
+
+
+# Email verification schemas
+
+class VerificationInit(BaseModel):
+    user_id: str
+
+
+class VerificationConfirm(BaseModel):
+    token: str
+
+
+class VerificationEmail(BaseModel):
+    user: 'UserOut'
+    verification_token: str
+    email_subject: str
+    email_html: str
+
+    class Config:
+        from_attributes = True
 
 
 # Checkout schemas

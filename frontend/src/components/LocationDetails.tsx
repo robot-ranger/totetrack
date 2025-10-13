@@ -7,6 +7,7 @@ import LocationForm from './LocationForm'
 import { FiExternalLink, FiX } from 'react-icons/fi'
 import ToteTable from './ToteTable'
 import { DeleteButton, EditButton } from './ui/buttons'
+import { useAuth } from '../auth'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -28,6 +29,7 @@ const getRandomColorPalette = (seed: string) => {
 }
 
 export default function LocationDetails({ locationId, inList = false }: { locationId: string, inList?: boolean }) {
+    const { user } = useAuth()
     const [location, setLocation] = useState<Location | null>(null)
     const [totes, setTotes] = useState<Tote[]>([])
     const [loading, setLoading] = useState(true)
@@ -78,8 +80,8 @@ export default function LocationDetails({ locationId, inList = false }: { locati
                             </HStack>
                             {location.description && <Text mt={2} whiteSpace="pre-wrap">{location.description}</Text>}</Box>}
                             <Flex gap={2} mt={2}>
-                                <EditButton onClick={editModal.onOpen} topic='Location' />
-                                <DeleteButton onClick={delDialog.onOpen} topic='Location' />
+                                <EditButton onClick={editModal.onOpen} topic='Location' disabled={!user?.is_verified} />
+                                <DeleteButton onClick={delDialog.onOpen} topic='Location' disabled={!user?.is_verified} />
                             </Flex>
                         </VStack>
                         <VStack align={'end'}>

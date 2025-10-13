@@ -5,10 +5,12 @@ import ToteForm from '../components/ToteForm'
 import ToteTable from '../components/ToteTable'
 import StatisticsCards from '../components/StatisticsCards'
 import { Box, Heading, Stack, Button, Text, useDisclosure, HStack, Input, VStack, Flex } from '@chakra-ui/react'
+import { useAuth } from '../auth'
 import { FiX } from 'react-icons/fi'
 
 
 export default function TotesPage() {
+    const { user } = useAuth()
     const [totes, setTotes] = useState<Tote[]>([])
     const [viewMode, setViewMode] = useState<'totes' | 'items'>('totes')
     const { open, onOpen, onClose } = useDisclosure()
@@ -58,7 +60,7 @@ export default function TotesPage() {
                 <Text textStyle='sm'>Search:</Text>
                 <HStack w='full'>
                     <Input placeholder="Search by name or UUID…" value={q} onChange={e => setQ(e.target.value)}/>
-                    <Button colorPalette="yellow" onClick={onOpen}>Add Tote</Button>
+                    <Button colorPalette="yellow" onClick={onOpen} disabled={!user?.is_verified}>Add Tote</Button>
                 </HStack>
             </VStack>
             {filtered?.length === 0 ? (

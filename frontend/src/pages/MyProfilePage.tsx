@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Box, Card, HStack, Heading, Separator, Stack, Text, Button, Badge, Input, Spacer, IconButton, Container } from '@chakra-ui/react'
 import { useAuth } from '../auth'
-import { fetchCheckedOutItems, checkinItem, listTotes, updateUser, requestPasswordRecovery, confirmPasswordRecovery } from '../api'
+import { fetchCheckedOutItems, checkinItem, listTotes, updateUser, requestPasswordRecovery, confirmPasswordRecovery, initSelfVerification } from '../api'
 import type { CheckedOutItem, ItemWithCheckoutStatus, Tote } from '../types'
 import ItemsTable from '../components/ItemsTable'
 import { FiEdit3 } from 'react-icons/fi'
@@ -18,6 +18,7 @@ export default function MyProfilePage() {
     const [message, setMessage] = useState<string>('')
     const [error, setError] = useState<string>('')
     const [editUser, setEditUser] = useState(false)
+    const [sendingVerification, setSendingVerification] = useState(false)
 
     const myItems: ItemWithCheckoutStatus[] = useMemo(() => {
         if (!user) return []
@@ -34,6 +35,12 @@ export default function MyProfilePage() {
     async function load() {
         setLoading(true)
         try {
+            if (!user?.is_verified) {
+                // Skip loading functional data for unverified users
+                setCheckedOut([])
+                setTotes([])
+                return
+            }
             const [cos, totesList] = await Promise.all([
                 fetchCheckedOutItems(),
                 listTotes(),
@@ -121,6 +128,22 @@ export default function MyProfilePage() {
         }
     }
 
+    async function onResendVerification() {
+        setError('')
+        setMessage('')
+        setSendingVerification(true)
+        try {
+            const res = await initSelfVerification()
+            console.log('Verification email prepared', res)
+            setMessage('Verification email sent. Please check your inbox.')
+        } catch (e: any) {
+            console.error('Failed to send verification email', e)
+            setError(e?.response?.data?.detail || 'Failed to send verification email')
+        } finally {
+            setSendingVerification(false)
+        }
+    }
+
     if (!user) return null
 
     return (
@@ -129,8 +152,11 @@ export default function MyProfilePage() {
                 <Heading fontSize="xl" fontWeight="bold">
                     My Profile
                 </Heading>
-                <Badge variant="solid" colorPalette={user.is_superuser ? 'purple' : 'gray'}>
+                <Badge variant="solid" colorPalette={user.is_superuser ? 'inherit' : 'gray'}>
                     {user.is_superuser ? 'Superuser' : 'User'}
+                </Badge>
+                <Badge variant="subtle" colorPalette={user.is_verified ? 'green' : 'orange'}>
+                    {user.is_verified ? 'Verified' : 'Unverified'}
                 </Badge>
             </HStack>
             <Card.Root>
@@ -174,16 +200,37 @@ export default function MyProfilePage() {
                     </Stack>
                 </Card.Body>
             </Card.Root>
-            <HStack justify="space-between" align="center" w="full" >
-                <Heading size="sm" >My Checked Out Items</Heading>
-            </HStack>
-            <ItemsTable
-                items={myItems}
-                totes={totes}
-                onCheckin={onCheckin}
-            />
-            {myItems.length === 0 && (
-                <Text color="fg.subtle" mt={2}>No items checked out.</Text>
+            {!user.is_verified ? (
+                <Card.Root>
+                    <Card.Body>
+                        <Stack gap={3}>
+                            <Heading size="sm">Email verification required</Heading>
+                            <Text color="fg.subtle">Your email address is not verified yet. You won’t be able to use app features until verification is completed.</Text>
+                            {(error || message) && (
+                                <Text color={error ? 'red.500' : 'green.600'} fontSize="sm">{error || message}</Text>
+                            )}
+                            <HStack>
+                                <Button size="sm" onClick={onResendVerification} loading={sendingVerification} colorPalette="blue">
+                                    Resend Verification Email
+                                </Button>
+                            </HStack>
+                        </Stack>
+                    </Card.Body>
+                </Card.Root>
+            ) : (
+                <>
+                    <HStack justify="space-between" align="center" w="full" >
+                        <Heading size="sm" >My Checked Out Items</Heading>
+                    </HStack>
+                    <ItemsTable
+                        items={myItems}
+                        totes={totes}
+                        onCheckin={onCheckin}
+                    />
+                    {myItems.length === 0 && (
+                        <Text color="fg.subtle" mt={2}>No items checked out.</Text>
+                    )}
+                </>
             )}
 
         </Stack>

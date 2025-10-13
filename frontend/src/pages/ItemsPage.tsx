@@ -3,12 +3,14 @@ import { listItems, listTotes, checkoutItem, checkinItem } from '../api'
 import type { ItemWithCheckoutStatus, Tote } from '../types'
 import { Box, HStack, Input, Text, VStack, Combobox, Portal, createListCollection, Flex, Heading, Link, Button, Image, Stack, Menu, IconButton, Checkbox } from '@chakra-ui/react'
 import ItemsTable from '../components/ItemsTable'
+import { useAuth } from '../auth'
 import ItemForm from '../components/ItemForm'
 import { FiX, FiFilter, FiChevronDown } from 'react-icons/fi'
 import { useColorMode } from '../components/ui/color-mode'
 
 
 export default function ItemsPage() {
+    const { user } = useAuth()
     const [items, setItems] = useState<ItemWithCheckoutStatus[]>([])
     const [totes, setTotes] = useState<Tote[]>([])
     const [q, setQ] = useState('')
@@ -175,7 +177,7 @@ export default function ItemsPage() {
                         </Portal>
                     </M.Root>
                 </VStack>
-                <Button onClick={() => { setEditingItem(null); setCreateModalOpen(true) }}>Add Item</Button>
+                <Button onClick={() => { setEditingItem(null); setCreateModalOpen(true) }} disabled={!user?.is_verified}>Add Item</Button>
             </HStack>
 
             {filtered.length === 0 ? (
@@ -195,6 +197,7 @@ export default function ItemsPage() {
                     showToteColumn={true}
                     showLocationColumn={true}
                     onMoved={loadData}
+                    disabled={!user?.is_verified}
                 />
             )}
 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { getMe, setAuthToken, logoutServer } from './api'
 import type { User } from './types'
+import { toaster } from './components/ui/toaster'
 
 interface AuthState {
   user: User | null
@@ -32,6 +33,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const me = await getMe()
       setUser(me)
+      if (me && !me.is_verified) {
+        toaster.create({
+          type: 'error',
+          title: 'Email not verified',
+          description: 'Some actions are disabled until you verify your email. Check your inbox for a verification link.',
+          closable: true,
+        })
+      }
     } catch {
       setUser(null)
       setTokenState(null)

@@ -57,6 +57,28 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 def get_current_active_user(current_user: models.User = Depends(get_current_user)):
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    if not current_user.is_verified:
+        # Block access for unverified users to functional endpoints
+        raise HTTPException(status_code=403, detail="Email not verified")
+    return current_user
+
+
+def get_current_user_unverified_ok(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) -> models.User:
+    """Like get_current_user but doesn't enforce is_active/is_verified. Useful for /users/me to inform UI."""
+    user_id = decode_token(token)
+    if user_id is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials")
+    from app import crud  # local import to avoid circular dependency during module import
+    user = crud.get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    return user
+
+
+def get_current_active_user_unverified_ok(current_user: models.User = Depends(get_current_user)) -> models.User:
+    """Require active=True but do not require email verification. Use for read-only browsing endpoints."""
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 

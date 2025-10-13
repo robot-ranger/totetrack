@@ -4,10 +4,12 @@ import type { Location, Tote } from '../types'
 import LocationForm from '../components/LocationForm'
 import LocationTable from '../components/LocationTable'
 import { Box, Heading, Stack, Text, Button, useDisclosure, HStack, Input, IconButton, Flex, VStack } from '@chakra-ui/react'
+import { useAuth } from '../auth'
 import { FiX, FiTrash2 } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 
 export default function LocationsPage() {
+    const { user } = useAuth()
     const [locations, setLocations] = useState<Location[]>([])
     const [totes, setTotes] = useState<Tote[]>([])
     const { open, onOpen, onClose } = useDisclosure()
@@ -137,7 +139,7 @@ export default function LocationsPage() {
                         value={q} 
                         onChange={e => setQ(e.target.value)}
                     />
-                    <Button colorPalette="blue" onClick={onOpen}>Add Location</Button>
+                    <Button colorPalette="blue" onClick={onOpen} disabled={!user?.is_verified}>Add Location</Button>
                 </HStack>
             </VStack>
             {locations.length === 0 ? (

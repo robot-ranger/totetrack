@@ -10,6 +10,7 @@ import ItemsTable from './ItemsTable'
 import { FiExternalLink, FiX } from 'react-icons/fi'
 import { DeleteButton, EditButton } from './ui/buttons'
 import { useSidebarRefresh } from '../SidebarRefreshContext'
+import { useAuth } from '../auth'
 
 // Local disclosure util (simple) to avoid pulling useDisclosure externally here.
 function useSimpleDisclosure(initial = false) {
@@ -18,6 +19,7 @@ function useSimpleDisclosure(initial = false) {
 }
 
 export default function ToteDetail({ toteId, inList = false }: { toteId: string, inList?: boolean }) {
+    const { user } = useAuth()
     const [tote, setTote] = useState<Tote | null>(null)
     const [items, setItems] = useState<ItemWithCheckoutStatus[]>([])
     const [editing, setEditing] = useState<Item | null>(null)
@@ -73,8 +75,8 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                             {tote.location && <Text><b>Location:</b> {tote.location}</Text>}
                             {tote.description && <Text mt={2} whiteSpace="pre-wrap">{tote.description}</Text>}
                             <Flex gap={2} mt={2}>
-                                <EditButton onClick={editToteModal.onOpen} topic='Tote' />
-                                <DeleteButton onClick={delDialog.onOpen} topic='Tote' />
+                                <EditButton onClick={editToteModal.onOpen} topic='Tote' disabled={!user?.is_verified} />
+                                <DeleteButton onClick={delDialog.onOpen} topic='Tote' disabled={!user?.is_verified} />
                             </Flex>
                             <Text color={'fg.subtle'}>Location: {tote.location_obj ? <Link variant="underline" color="teal.500" asChild><RouterLink to={`/locations/${tote.location_obj.id}`}>{tote.location_obj.name} <FiExternalLink/></RouterLink></Link> : 'Unassigned'}</Text>
                         </VStack>
@@ -94,7 +96,7 @@ export default function ToteDetail({ toteId, inList = false }: { toteId: string,
                     <Separator my={4} />
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                         <Heading size="sm">Items</Heading>
-                        <Button size="sm" colorPalette="yellow" onClick={() => { setEditing(null); addModal.onOpen(); }}>Add Item</Button>
+                        <Button size="sm" colorPalette="yellow" onClick={() => { setEditing(null); addModal.onOpen(); }} disabled={!user?.is_verified}>Add Item</Button>
                     </Box>
                     {items.length === 0 ? (
                         <Text mt={2}>No items yet.</Text>

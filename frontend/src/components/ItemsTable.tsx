@@ -14,6 +14,7 @@ interface ItemsTableProps {
   showToteColumn?: boolean
   showLocationColumn?: boolean
   onMoved?: () => void
+  disabled?: boolean
 }
 
 // Temporary alias to relax Menu subcomponent typings
@@ -28,6 +29,7 @@ export default function ItemsTable({
   showToteColumn = true,
   showLocationColumn = true,
   onMoved,
+  disabled = false,
 }: ItemsTableProps) {
   const [moveItem, setMoveItem] = useState<ItemWithCheckoutStatus | null>(null)
   
@@ -120,7 +122,7 @@ export default function ItemsTable({
                 <Table.Cell>
                   <M.Root>
                     <M.Trigger asChild>
-                      <IconButton size="xs" variant="ghost" aria-label="Item actions">
+                      <IconButton size="xs" variant="ghost" aria-label="Item actions" disabled={disabled}>
                         <FiMoreVertical />
                       </IconButton>
                     </M.Trigger>
@@ -128,27 +130,27 @@ export default function ItemsTable({
                       <M.Positioner>
                         <M.Content>
                           {onEdit && (
-                            <M.Item value="edit" onClick={() => onEdit?.(item)}>
+                            <M.Item value="edit" onClick={() => !disabled && onEdit?.(item)} disabled={disabled}>
                               <FiEdit />
                               Edit
                             </M.Item>
                           )}
                           {item.is_checked_out ? (
                             onCheckin && (
-                              <M.Item value="checkin" onClick={() => onCheckin?.(item.id)}>
+                              <M.Item value="checkin" onClick={() => !disabled && onCheckin?.(item.id)} disabled={disabled}>
                                 <FiLogIn />
                                 Check In
                               </M.Item>
                             )
                           ) : (
                             onCheckout && (
-                              <M.Item value="checkout" onClick={() => onCheckout?.(item.id)}>
+                              <M.Item value="checkout" onClick={() => !disabled && onCheckout?.(item.id)} disabled={disabled}>
                                 <FiLogOut />
                                 Check Out
                               </M.Item>
                             )
                           )}
-                          <M.Item value="move" onClick={() => setMoveItem(item)}>
+                          <M.Item value="move" onClick={() => !disabled && setMoveItem(item)} disabled={disabled}>
                             <FiArrowRight />
                             Move to ...
                           </M.Item>

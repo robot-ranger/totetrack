@@ -51,7 +51,7 @@ export default function StatisticsCards() {
             label: 'Totes',
             value: stats.totes_count,
             icon: FiPackage,
-            colorPalette: 'green',
+            colorPalette: 'yellow',
             href: '/'
         },
         {
@@ -84,7 +84,7 @@ export default function StatisticsCards() {
                     transition="background-color 0.2s"
                 >
                     <RouterLink to={item.href}>
-                    <HStack justify="space-between" colorPalette={'teal'}>
+                    <HStack justify="space-between">
                         <Stat.Label fontSize="sm">
                             {item.label}
                         </Stat.Label>

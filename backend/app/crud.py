@@ -36,6 +36,7 @@ def create_account(db: Session, account: schemas.AccountCreate) -> tuple[models.
         hashed_password=hashed,
         is_superuser=True,
         is_active=True,
+        is_verified=True,
     )
     db.add(owner)
     db.commit()
@@ -256,6 +257,7 @@ def create_user(db: Session, account_id: str, user_in: schemas.UserCreate, *, as
         hashed_password=hashed,
         is_superuser=as_superuser,
         is_active=True,
+        is_verified=False,
     )
     db.add(user)
     db.commit()
@@ -301,6 +303,45 @@ def update_user_password(db: Session, user: models.User, new_password: str):
     return user
 
 
+# Email verification
+
+def set_verification_token(db: Session, user: models.User) -> str:
+    if user.is_verified:
+        return ""
+    token_plain = secrets.token_urlsafe(32)
+    token_hash = get_password_hash(token_plain)
+    user.verification_token_hash = token_hash
+    # Store as naive UTC to avoid tz-aware/naive comparison issues with SQLite
+    user.verification_token_expires = datetime.utcnow() + timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return token_plain
+
+
+def consume_verification_token(db: Session, token: str) -> models.User | None:
+    # Use naive UTC consistently
+    now = datetime.utcnow()
+    for user in db.query(models.User).filter(models.User.verification_token_hash.isnot(None)):
+        if user.verification_token_expires:
+            exp = user.verification_token_expires
+            # Normalize to naive datetime for comparison if needed
+            if getattr(exp, "tzinfo", None) is not None:
+                exp = exp.replace(tzinfo=None)
+            if exp < now:
+                continue
+        if verify_password(token, user.verification_token_hash):
+            user.verification_token_hash = None
+            user.verification_token_expires = None
+            user.is_verified = True
+            user.is_active = True  # ensure active once verified
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            return user
+    return None
+
+
 def authenticate_user(db: Session, email: str, password: str):
     user = get_user_by_email(db, email)
     if not user:
@@ -315,7 +356,7 @@ def set_reset_token(db: Session, user: models.User):
     # store hash for security, simple approach: hash using password hasher
     token_hash = get_password_hash(token_plain)
     user.reset_token_hash = token_hash
-    user.reset_token_expires = datetime.now(timezone.utc) + timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
+    user.reset_token_expires = datetime.utcnow() + timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRE_MINUTES)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -324,10 +365,14 @@ def set_reset_token(db: Session, user: models.User):
 
 def consume_reset_token(db: Session, token: str, new_password: str):
     # naive scan (OK for small user base); for large scale use a separate table or deterministic hash
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     for user in db.query(models.User).filter(models.User.reset_token_hash.isnot(None)):
-        if user.reset_token_expires and user.reset_token_expires < now:
-            continue
+        if user.reset_token_expires:
+            exp = user.reset_token_expires
+            if getattr(exp, "tzinfo", None) is not None:
+                exp = exp.replace(tzinfo=None)
+            if exp < now:
+                continue
         # verify provided token against stored hash
         if verify_password(token, user.reset_token_hash):
             user.reset_token_hash = None

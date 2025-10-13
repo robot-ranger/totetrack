@@ -1,24 +1,12 @@
 import { useState, useEffect } from 'react'
-import {
-    Box,
-    Button,
-    Heading,
-    Table,
-    Text,
-    Badge,
-    HStack,
-    VStack,
-    IconButton,
-    Menu,
-    Portal,
-    Flex,
-} from '@chakra-ui/react'
-import { FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiX, FiUserPlus } from 'react-icons/fi'
+import { Box, Button, Heading, Text, HStack, VStack, Flex } from '@chakra-ui/react'
+import { FiX, FiUserPlus } from 'react-icons/fi'
 import { useAuth } from '../auth'
-import { listUsers, createUser, updateUser, deleteUser } from '../api'
+import { listUsers, createUser, updateUser, deleteUser, sendVerification } from '../api'
 import type { User } from '../types'
 import type { CreateUserForm, UpdateUserForm } from '../api'
 import UserForm from '../components/UserForm'
+import UsersTable from '../components/UsersTable'
 
 function useSimpleDisclosure(initial = false) {
     const [open, setOpen] = useState(initial)
@@ -32,6 +20,7 @@ export default function UsersPage() {
     const [error, setError] = useState('')
     const [editingUser, setEditingUser] = useState<User | null>(null)
     const [deletingUser, setDeletingUser] = useState<User | null>(null)
+    const [sendingVerification, setSendingVerification] = useState<string | null>(null)
     const [formLoading, setFormLoading] = useState(false)
     const createModal = useSimpleDisclosure()
     const editModal = useSimpleDisclosure()
@@ -107,53 +96,16 @@ export default function UsersPage() {
         }
     }
 
-    function MoreMenu({ user }: { user: User }) {
-        const M = Menu as any
-        const canDelete = user.id !== currentUser?.id // Can't delete yourself
-
-        return (
-            <M.Root>
-                <M.Trigger asChild>
-                    <IconButton
-                        aria-label="More actions"
-                        size="sm"
-                        variant="ghost"
-                    >
-                        <FiMoreVertical />
-                    </IconButton>
-                </M.Trigger>
-                <Portal>
-                    <M.Positioner>
-                        <M.Content>
-                            <M.Item
-                                value="edit"
-                                color="fg.info"
-                                onClick={() => {
-                                    setEditingUser(user)
-                                    editModal.onOpen()
-                                }}
-                            >
-                                <FiEdit2 style={{ marginRight: '8px' }} />
-                                Edit User
-                            </M.Item>
-                            {canDelete && (
-                                <M.Item
-                                    value="delete"
-                                    color="fg.error"
-                                    onClick={() => {
-                                        setDeletingUser(user)
-                                        deleteModal.onOpen()
-                                    }}
-                                >
-                                    <FiTrash2 style={{ marginRight: '8px' }} />
-                                    Delete User
-                                </M.Item>
-                            )}
-                        </M.Content>
-                    </M.Positioner>
-                </Portal>
-            </M.Root>
-        )
+    async function handleSendVerification(user: User) {
+        try {
+            setSendingVerification(user.id)
+            const res = await sendVerification(user.id)
+            console.log('Verification email prepared:', res)
+        } catch (e: any) {
+            console.error('Failed to send verification', e?.response?.data || e)
+        } finally {
+            setSendingVerification(null)
+        }
     }
 
     if (loading) {
@@ -176,50 +128,13 @@ export default function UsersPage() {
                 </Box>
             )}
 
-            <Box overflowX="auto">
-                <Table.Root size="sm" variant="line">
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.ColumnHeader>Email</Table.ColumnHeader>
-                            <Table.ColumnHeader>Full Name</Table.ColumnHeader>
-                            <Table.ColumnHeader>Status</Table.ColumnHeader>
-                            <Table.ColumnHeader>Role</Table.ColumnHeader>
-                            <Table.ColumnHeader>Created</Table.ColumnHeader>
-                            <Table.ColumnHeader textAlign="center">Actions</Table.ColumnHeader>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {users.map(user => (
-                            <Table.Row key={user.id}>
-                                <Table.Cell>
-                                    <Text fontWeight="medium">{user.email}</Text>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <Text>{user.full_name || '-'}</Text>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <Badge colorScheme={user.is_active ? 'green' : 'red'}>
-                                        {user.is_active ? 'Active' : 'Inactive'}
-                                    </Badge>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <Badge colorScheme={user.is_superuser ? 'purple' : 'gray'}>
-                                        {user.is_superuser ? 'Superuser' : 'User'}
-                                    </Badge>
-                                </Table.Cell>
-                                <Table.Cell>
-                                    <Text fontSize="sm" color="gray.600">
-                                        {user.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
-                                    </Text>
-                                </Table.Cell>
-                                <Table.Cell textAlign="center">
-                                    <MoreMenu user={user} />
-                                </Table.Cell>
-                            </Table.Row>
-                        ))}
-                    </Table.Body>
-                </Table.Root>
-            </Box>
+            <UsersTable
+                users={users}
+                currentUserId={currentUser?.id}
+                onEdit={(u) => { setEditingUser(u); editModal.onOpen() }}
+                onDelete={(u) => { setDeletingUser(u); deleteModal.onOpen() }}
+                onSendVerification={handleSendVerification}
+            />
 
             {/* Create User Modal */}
             {createModal.open && (

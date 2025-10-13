@@ -263,6 +263,22 @@ export async function deleteUser(userId: string): Promise<void> {
     await http.delete(`/users/${userId}`)
 }
 
+// ——— Email verification ———
+export async function sendVerification(userId: string): Promise<{ user_id?: string; verification_token?: string; email_subject?: string; email_html?: string; message?: string }> {
+    const { data } = await http.post(`/users/${userId}/send-verification`)
+    return data
+}
+
+export async function initSelfVerification(): Promise<{ verification_token?: string; email_subject?: string; email_html?: string; message?: string }> {
+    const { data } = await http.post(`/email-verification`)
+    return data
+}
+
+export async function confirmEmailVerification(token: string): Promise<{ message: string }> {
+    const { data } = await http.post(`/email-verification/confirm`, { token })
+    return data
+}
+
 // ——— Checkout functionality ———
 
 export async function checkoutItem(itemId: string): Promise<CheckedOutItem> {

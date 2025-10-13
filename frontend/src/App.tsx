@@ -18,6 +18,7 @@ import { Sidebar } from './components/Sidebar'
 import { ProfileModal } from './components/ProfileModal'
 import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 import LandingPage from './pages/LandingPage'
 import { SidebarRefreshProvider } from './SidebarRefreshContext'
 import MyProfilePage from './pages/MyProfilePage'
@@ -94,6 +95,7 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
+                    <Route path="/verify" element={<VerifyEmailPage />} />
                     <Route path="/recover" element={<PasswordRecoveryPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
@@ -140,6 +142,7 @@ export default function App() {
                     </HStack>
                     <Routes>
                         <Route path="/" element={<TotesPage />} />
+                        <Route path="/verify" element={<VerifyEmailPage />} />
                         <Route path="/items" element={<ItemsPage />} />
                         <Route path="/checked-out" element={<CheckedOutItemsPage />} />
                         <Route path="/locations" element={<LocationsPage />} />

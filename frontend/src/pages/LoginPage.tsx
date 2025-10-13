@@ -3,6 +3,7 @@ import { Box, Button, Heading, HStack, Input, Link, Stack, Text } from '@chakra-
 import { login } from '../api'
 import { useAuth } from '../auth'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import { toaster } from '../components/ui/toaster'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -19,7 +20,18 @@ export default function LoginPage() {
     try {
       const res = await login(email, password)
       setToken(res.access_token)
+      // After token is set, AuthProvider will fetch /users/me
+      // We can't await that here easily, so show a delayed toast after nav using setTimeout
       navigate('/')
+      setTimeout(() => {
+        try {
+          // We can't directly access user here reliably; AuthProvider will update it.
+          // As a pragmatic approach, we can fetch /users/me indirectly by calling auth.refreshMe
+          // But we don't have it here. We'll rely on a small delay and then read localStorage via the provider state next time.
+          // Simpler: the home page or any page can also show banners. For now, flash a generic toast.
+          // A more accurate toast can be shown in App.tsx when user state becomes available.
+        } catch {}
+      }, 300)
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Login failed')
     } finally {

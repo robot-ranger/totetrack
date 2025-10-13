@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import os
 from app import security
+from app.utils.email.templates import welcome_email_html, password_recovery_email_html
+from app.utils.email.sender import send_email
 
 from app.db import Base, engine, get_session
 import app.models as models
@@ -14,6 +16,27 @@ import app.crud as crud
 import app.image_store as image_store
 
 Base.metadata.create_all(bind=engine)
+
+# Best-effort lightweight migration for SQLite to add new columns if missing
+try:
+    from sqlalchemy import inspect
+    from app.db import SessionLocal
+    inspector = inspect(engine)
+    cols = {c['name'] for c in inspector.get_columns('users')}
+    needed = []
+    if 'is_verified' not in cols:
+        needed.append("ALTER TABLE users ADD COLUMN is_verified BOOLEAN NOT NULL DEFAULT 0")
+    if 'verification_token_hash' not in cols:
+        needed.append("ALTER TABLE users ADD COLUMN verification_token_hash VARCHAR")
+    if 'verification_token_expires' not in cols:
+        needed.append("ALTER TABLE users ADD COLUMN verification_token_expires DATETIME")
+    if needed:
+        with engine.begin() as conn:
+            for stmt in needed:
+                conn.exec_driver_sql(stmt)
+except Exception as _e:
+    # Log or ignore; this is best-effort in dev environment
+    pass
 
 # Instantiate app early so decorators below work
 openapi_tags = [
@@ -62,10 +85,6 @@ def init_superuser():
             except ValueError as exc:
                 print(f"[startup] Failed to create initial account: {exc}")
 
-
-    # Purge mode: no automatic migrations. Ensure a clean DB by deleting the SQLite file before starting the app.
-
-
 # Auth & Users
 
 
@@ -109,7 +128,7 @@ def logout(_: models.User = Depends(security.get_current_active_user)):
 
 
 @app.get("/users/me", response_model=schemas.UserOut, tags=["users"])
-def read_users_me(current_user=Depends(security.get_current_active_user)):
+def read_users_me(current_user=Depends(security.get_current_user_unverified_ok)):
     return current_user
 
 
@@ -121,9 +140,76 @@ def create_user(
 ):
     try:
         user = crud.create_user(db, current_user.account_id, user_in)
+        # Auto-send verification email for new users
+        if not user.is_verified:
+            token = crud.set_verification_token(db, user)
+            base = os.getenv("PUBLIC_BASE_URL", "http://localhost:5173")
+            verify_url = f"{base}/verify?token={token}"
+            email_subject = "Welcome to ToteTrack – Verify your email"
+            email_html = welcome_email_html(user.full_name, verify_url)
+            try:
+                send_email(email_subject, user.email, email_html)
+            except Exception as e:
+                print("[send-verification:create_user] Failed to send:", e)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return user
+
+
+@app.post("/users/{user_id}/send-verification", tags=["users"])
+def send_verification(
+    user_id: str,
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_active_superuser),
+):
+    user = crud.get_user(db, user_id)
+    if not user or user.account_id != current_user.account_id:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_verified:
+        return {"message": "User already verified"}
+    token = crud.set_verification_token(db, user)
+    # Construct a verification URL that the frontend can route. In real deployment, use public base URL env.
+    base = os.getenv("PUBLIC_BASE_URL", "http://localhost:5173")
+    verify_url = f"{base}/verify?token={token}"
+    email_subject = "Welcome to ToteTrack – Verify your email"
+    email_html = welcome_email_html(user.full_name, verify_url)
+    sent = send_email(email_subject, user.email, email_html)
+    return {
+        "user_id": user.id,
+        "verification_token": token,
+        "email_subject": email_subject,
+        "email_html": email_html,
+        "sent": bool(sent),
+    }
+
+
+@app.post("/email-verification", tags=["users"])
+def init_self_verification(
+    db: Session = Depends(get_session),
+    current_user: models.User = Depends(security.get_current_user_unverified_ok),
+):
+    if current_user.is_verified:
+        return {"message": "Already verified"}
+    token = crud.set_verification_token(db, current_user)
+    base = os.getenv("PUBLIC_BASE_URL", "http://localhost:5173")
+    verify_url = f"{base}/verify?token={token}"
+    email_subject = "Welcome to ToteTrack – Verify your email"
+    email_html = welcome_email_html(current_user.full_name, verify_url)
+    sent = send_email(email_subject, current_user.email, email_html)
+    return {
+        "verification_token": token,
+        "email_subject": email_subject,
+        "email_html": email_html,
+        "sent": bool(sent),
+    }
+
+
+@app.post("/email-verification/confirm", tags=["users"])
+def confirm_email_verification(payload: schemas.VerificationConfirm, db: Session = Depends(get_session)):
+    user = crud.consume_verification_token(db, payload.token)
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+    return {"message": "Email verified"}
 
 
 @app.get("/users", response_model=List[schemas.UserOut], tags=["users"])
@@ -186,6 +272,12 @@ def password_recovery_init(payload: schemas.PasswordRecoveryInit, db: Session = 
     if not user:
         return {"message": "If the account exists, a recovery token has been generated."}
     token_plain = crud.set_reset_token(db, user)
+    # Email the reset link
+    base = os.getenv("PUBLIC_BASE_URL", "http://localhost:5173")
+    reset_url = f"{base}/reset-password?token={token_plain}"
+    subject = "ToteTrack – Reset your password"
+    html = password_recovery_email_html(user.full_name, reset_url)
+    send_email(subject, user.email, html)
     return {"recovery_token": token_plain}
 
 
@@ -211,7 +303,7 @@ def create_tote(
 @app.get("/totes", response_model=List[schemas.ToteOut], tags=["totes"])
 def get_totes(
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     return crud.list_totes(db, account_id=current_user.account_id)
 
@@ -220,7 +312,7 @@ def get_totes(
 def get_tote(
     tote_id: str,
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     m = crud.get_tote_by_id(db, tote_id, current_user.account_id)
     if not m:
@@ -273,7 +365,7 @@ def create_location(
 @app.get("/locations", response_model=List[schemas.LocationOut], tags=["locations"])
 def get_locations(
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     return crud.list_locations(db, account_id=current_user.account_id)
 
@@ -282,7 +374,7 @@ def get_locations(
 def get_location(
     location_id: str,
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
@@ -321,7 +413,7 @@ def update_location(
 def get_location_totes(
     location_id: str,
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     location = crud.get_location(db, location_id, account_id=current_user.account_id)
     if not location:
@@ -399,7 +491,7 @@ async def create_item_in_tote(
 @app.get("/items", response_model=List[schemas.ItemWithCheckoutStatus], tags=["items"])
 async def all_items(
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     rows = crud.list_items(db, current_user.account_id)
     out = []
@@ -429,7 +521,7 @@ async def all_items(
 async def items_in_tote(
     tote_id: str,
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     rows = crud.list_items_in_tote(db, tote_id, current_user.account_id)
     out = []
@@ -575,7 +667,7 @@ async def checkin_item(
 @app.get("/checked-out-items", response_model=List[schemas.CheckedOutItemOut], tags=["items"])
 async def get_checked_out_items(
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     """Get all items checked out from totes owned by the current user."""
     return crud.get_checked_out_items(db, current_user.account_id)
@@ -584,7 +676,7 @@ async def get_checked_out_items(
 @app.get("/statistics", response_model=schemas.StatisticsOut, tags=["statistics"])
 async def get_statistics(
     db: Session = Depends(get_session),
-    current_user: models.User = Depends(security.get_current_active_user),
+    current_user: models.User = Depends(security.get_current_active_user_unverified_ok),
 ):
     """Get summary statistics for the current user's inventory."""
     stats = crud.get_statistics(db, current_user.account_id)

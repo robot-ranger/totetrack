@@ -90,6 +90,10 @@ class User(Base):
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, nullable=False, default=True)
     is_superuser = Column(Boolean, nullable=False, default=False)
+    # Email verification state
+    is_verified = Column(Boolean, nullable=False, default=False)
+    verification_token_hash = Column(String, nullable=True, index=True)
+    verification_token_expires = Column(DateTime, nullable=True)
     hashed_password = Column(String, nullable=False)
     reset_token_hash = Column(String, nullable=True, index=True)
     reset_token_expires = Column(DateTime, nullable=True)
