@@ -110,6 +110,100 @@ Image URLs in responses (if present) are relative (e.g. `/media/filename.jpg`).
 ```
 
 ---
+## Import/Export (CSV Format)
+
+ToteTrack supports bulk data import and export via ZIP files containing CSV data. This is useful for:
+- Backing up your inventory data
+- Migrating between instances
+- Bulk importing existing inventories
+- Data analysis and reporting
+
+### Export Process
+1. Click the "Export Data" button in the top navigation
+2. Downloads a ZIP file containing up to 4 CSV files:
+   - `locations.csv` - All locations in your account
+   - `totes.csv` - All totes with location relationships
+   - `items.csv` - All items with tote relationships and checkout status
+   - `users.csv` - All users (admin accounts only)
+
+### Import Process
+1. Prepare your CSV files following the format specifications below
+2. Package them into a ZIP file (any or all of the 4 files)
+3. Use the import functionality to upload and process the data
+4. Review the import report for created items and any warnings
+
+### CSV Format Specifications
+
+All CSV files must follow RFC 4180 standards with UTF-8 encoding. Fields containing commas, quotes, or newlines should be quoted, with internal quotes escaped as `""`.
+
+#### `locations.csv`
+```csv
+id,name,description
+loc-001,Warehouse A,Main storage facility
+loc-002,Office,Administrative area
+```
+- **id**: UUID (can be existing or new)
+- **name**: Unique location name (required)
+- **description**: Optional description
+
+#### `totes.csv`
+```csv
+id,name,description,location,location_id,metadata_json,items_count
+tote-001,Electronics Box,Computer parts,Warehouse A,loc-001,"{}",5
+tote-002,Office Supplies,,Office,loc-002,"{}",12
+```
+- **id**: UUID for mapping to items (temporary during import)
+- **name**: Tote name (can be empty for unnamed totes)
+- **description**: Optional description
+- **location**: Location name (legacy, for backward compatibility)
+- **location_id**: Preferred UUID reference to location
+- **metadata_json**: Optional JSON metadata as string
+- **items_count**: Informational count (calculated during export)
+
+#### `items.csv`
+```csv
+id,name,description,quantity,tote_id,image_url,is_checked_out,checked_out_at,checked_out_by_id,checked_out_by_email,checked_out_by_name
+item-001,Laptop,Dell Latitude 5520,1,tote-001,/media/laptop.jpg,true,2023-10-13T14:30:00Z,user-001,john@example.com,John Doe
+item-002,USB Cable,USB-C to USB-A,5,tote-001,,false,,,,,
+```
+- **id**: UUID identifier
+- **name**: Item name (required)
+- **description**: Optional description
+- **quantity**: Number of items (defaults to 1)
+- **tote_id**: UUID of parent tote (optional)
+- **image_url**: Relative path like `/media/filename.jpg`
+- **is_checked_out**: Boolean checkout status
+- **checked_out_at**: ISO datetime string (optional)
+- **checked_out_by_id**: User UUID who checked out (optional)
+- **checked_out_by_email**: User email (informational)
+- **checked_out_by_name**: User full name (informational)
+
+#### `users.csv` (Admin Only)
+```csv
+id,email,full_name,is_active,is_superuser,account_id,created_at,updated_at
+user-001,john@example.com,John Doe,true,false,acc-001,2023-10-01T10:00:00Z,2023-10-13T14:30:00Z
+user-002,admin@example.com,Admin User,true,true,acc-001,2023-10-01T10:00:00Z,2023-10-13T14:30:00Z
+```
+- **id**: UUID identifier
+- **email**: Unique email address (required)
+- **full_name**: Optional full name
+- **is_active**: Boolean active status
+- **is_superuser**: Boolean superuser status
+- **account_id**: UUID of parent account
+- **created_at**: ISO datetime string (optional)
+- **updated_at**: ISO datetime string (optional)
+
+**Note**: Imported users receive randomly generated temporary passwords that must be changed on first login.
+
+### Import Behavior
+- **Locations**: Created by name, duplicates are skipped
+- **Totes**: Created by name, empty names always create new totes
+- **Items**: Always created (no duplicate checking by name)
+- **Users**: Created by email, duplicates are skipped
+- **Relationships**: Location and tote relationships are resolved by name or ID
+- **Error Handling**: Invalid data uses sensible defaults, missing relationships are handled gracefully
+
+---
 ## Dev HTTPS (mobile camera / QR scanning)
 Some mobile browsers require a secure context (HTTPS or `http://localhost`) for camera access. Accessing via raw LAN IP over HTTP (e.g. `http://192.168.x.x:5173`) can block the camera.
 
