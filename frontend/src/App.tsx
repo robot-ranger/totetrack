@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { Container, Heading, HStack, Spacer, Button, Box, Icon, Image, IconButton } from '@chakra-ui/react'
 import { useColorMode } from './components/ui/color-mode'
@@ -20,6 +20,7 @@ import LoginPage from './pages/LoginPage'
 import PasswordRecoveryPage from './pages/PasswordRecoveryPage'
 import LandingPage from './pages/LandingPage'
 import { SidebarRefreshProvider } from './SidebarRefreshContext'
+import MyProfilePage from './pages/MyProfilePage'
 
 const sidebarWidth = 220
 
@@ -31,6 +32,7 @@ export default function App() {
     // Profile and nav state for authenticated users (always declare hooks)
     const [profileOpen, setProfileOpen] = useState(false)
     const [navOpen, setNavOpen] = useState(false)
+    const navigate = useNavigate()
 
     // Generic CSV helpers
     function escapeCsv(val: unknown): string {
@@ -146,43 +148,6 @@ export default function App() {
         }
     }
 
-    async function handleDownloadCsv() {
-        try {
-            const items = await listItems()
-            const itemHeaders = [
-                'id', 'name', 'description', 'quantity', 'tote_id', 'image_url',
-                'is_checked_out', 'checked_out_at', 'checked_out_by_id', 'checked_out_by_email', 'checked_out_by_name',
-            ]
-            const rows = items.map((it: ItemWithCheckoutStatus) => ({
-                id: it.id,
-                name: it.name,
-                description: it.description ?? '',
-                quantity: it.quantity,
-                tote_id: it.tote_id ?? '',
-                image_url: it.image_url ?? '',
-                is_checked_out: !!it.is_checked_out,
-                checked_out_at: it.checked_out_at ?? '',
-                checked_out_by_id: it.checked_out_by?.id ?? '',
-                checked_out_by_email: it.checked_out_by?.email ?? '',
-                checked_out_by_name: it.checked_out_by?.full_name ?? '',
-            }))
-            const csv = toCsvFromRows(rows, itemHeaders)
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-            const url = URL.createObjectURL(blob)
-            const ts = new Date()
-            const pad = (n: number) => String(n).padStart(2, '0')
-            const filename = `items-${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}.csv`
-            const a = document.createElement('a')
-            a.href = url
-            a.download = filename
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
-        } catch (err) {
-            console.error('Failed to download CSV', err)
-        }
-    }
     // Public routes
     if (!user) {
         return (
@@ -216,7 +181,7 @@ export default function App() {
                     mobileOpen={navOpen}
                     onMobileOpenChange={setNavOpen}
                     hideHamburger
-                    onProfile={() => setProfileOpen(true)}
+                    onProfile={() => navigate('/me')}
                     onLogout={logout}
                     onWidthChange={setSidebarCurrentWidth}
                 />
@@ -235,8 +200,8 @@ export default function App() {
                                 <FiDownloadCloud />
                             </IconButton>
                         )}
-                        <Button size="sm" variant="subtle" onClick={() => setProfileOpen(true)}>
-                            <Icon size={'sm'}><FiSettings /></Icon>
+                        <Button size="sm" variant="subtle" onClick={() => navigate('/me')}>
+                            <Icon size={'sm'}><FiUser /></Icon>
                         </Button>
                     </HStack>
                     <Routes>
@@ -246,10 +211,10 @@ export default function App() {
                         <Route path="/locations" element={<LocationsPage />} />
                         <Route path="/locations/:locationId" element={<LocationDetailsPage />} />
                         <Route path="/users" element={<UsersPage />} />
+                        <Route path="/me" element={<MyProfilePage />} />
                         <Route path="/totes/:toteId" element={<ToteDetailPage />} />
                         <Route path="*" element={<Navigate to="/" replace />} />
                     </Routes>
-                    <ProfileModal open={profileOpen} onClose={() => setProfileOpen(false)} onLogout={logout} />
                 </Box>
             </Box>
         </SidebarRefreshProvider>
